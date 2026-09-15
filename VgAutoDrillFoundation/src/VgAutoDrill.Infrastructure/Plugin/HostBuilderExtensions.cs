@@ -4,9 +4,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace VgAutoDrill.Infrastructure.Plugin;
 
-public static class HostBuilderExtensions
+public class HostBuilderExtensions
 {
-    public static void AddPlugin(this IHostBuilder hostBuilder, IServiceCollection services, HostBuilderContext hostBuilderContext)
+    public static Action<HostBuilderContext, IServiceCollection> ConfigurePlugins = (hostBuilderContext, services) =>
     {
         var options = hostBuilderContext.Configuration.GetSection(nameof(PluginSetupOptions)).Get<PluginSetupOptions>();
         if (options == null) return;
@@ -26,5 +26,5 @@ public static class HostBuilderExtensions
             configBuilder.Build();
             hostBuilderContext.Configuration = configBuilder.Build();
         }
-    }
+    };
 }

@@ -34,7 +34,7 @@
     <ProjectReference Include="..\..\src\VgAutoDrill.Infrastructure\VgAutoDrill.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Plugin2.json">
+    <None Update="conf\Plugin2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Plugin1.json">

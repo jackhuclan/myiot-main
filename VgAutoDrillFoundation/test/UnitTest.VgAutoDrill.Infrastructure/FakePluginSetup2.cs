@@ -16,7 +16,7 @@ internal class FakePluginSetup2 : IPluginSetupItem
     public bool HasInstalled { get; set; }
     public void Install(IServiceCollection services, IConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.AddJsonFile($"./Plugin2.json", false);
+        configurationBuilder.AddJsonFile($"./conf/Plugin2.json", false);
         var configuration = configurationBuilder.Build();
         services.Configure<FakePluginSetup2Options>(configuration.GetSection(nameof(FakePluginSetup2Options)));
 

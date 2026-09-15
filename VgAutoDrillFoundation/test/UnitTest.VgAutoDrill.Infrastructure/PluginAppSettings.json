@@ -17,7 +17,7 @@
         "VgAutoDrill": {
             "EnableLogging": true,
             "LogLevel": "Debug",
-            "MaxRetries": 2
+            "MaxRetries": 1
         }
     }
 }

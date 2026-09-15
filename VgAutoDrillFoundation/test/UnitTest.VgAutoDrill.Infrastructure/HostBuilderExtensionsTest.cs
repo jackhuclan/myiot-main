@@ -12,6 +12,29 @@ public class HostBuilderExtensionsTest
     public void TestAddPlugin()
     {
         var host = Host.CreateDefaultBuilder()
+            .ConfigureHostConfiguration(configurationBuilder => configurationBuilder.AddJsonFile("PluginAppSettings2.json"))
+            .ConfigureServices(HostBuilderExtensions.ConfigurePlugins)
+            .Build();
+        _ = host.RunAsync();
+
+        var plugin = host.Services.GetService<IPluginTest>();
+        var pluginOptions = host.Services.GetService<IOptions<FakePluginSetupOptions>>()?.Value;
+        Assert.NotNull(plugin);
+        Assert.NotNull(plugin.DoSomething());
+        Assert.NotNull(pluginOptions?.MyProperty);
+
+        var configuration = host.Services.GetService<IConfiguration>();
+        Assert.NotNull(configuration);
+        var section = configuration.GetSection("OverridableSettings:VgAutoDrill");
+        Assert.True(section.GetValue<bool>("EnableLogging"));
+        Assert.Equal("Error", section.GetValue<string>("LogLevel"));
+        Assert.Equal(2, section.GetValue<int>("MaxRetries"));
+    }
+
+    [Fact]
+    public void TestAddPlugin2()
+    {
+        var host = Host.CreateDefaultBuilder()
             .ConfigureHostConfiguration(configurationBuilder => configurationBuilder.AddJsonFile("PluginAppSettings.json"))
             .ConfigureServices(HostBuilderExtensions.ConfigurePlugins)
             .Build();

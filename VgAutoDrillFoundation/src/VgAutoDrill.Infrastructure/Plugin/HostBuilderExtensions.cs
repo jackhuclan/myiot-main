@@ -24,6 +24,7 @@ public class HostBuilderExtensions
             }
 
             hostBuilderContext.Configuration = configBuilder.Build();
+            services.AddSingleton(hostBuilderContext.Configuration);
         }
     };
 }

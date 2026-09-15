@@ -30,10 +30,9 @@ public class HostBuilderExtensionsTest
 
         var configuration = host.Services.GetService<IConfiguration>();
         Assert.NotNull(configuration);
-
-        //var section = configuration.GetSection("OverridableSettings:VgAutoDrill");
-        //Assert.False(section.GetValue<bool>("EnableLogging"));
-        //Assert.Equal("Information", section.GetValue<string>("LogLevel"));
-        //Assert.Equal(3, section.GetValue<int>("MaxRetries"));
+        var section = configuration.GetSection("OverridableSettings:VgAutoDrill");
+        Assert.False(section.GetValue<bool>("EnableLogging"));
+        Assert.Equal("Information", section.GetValue<string>("LogLevel"));
+        Assert.Equal(3, section.GetValue<int>("MaxRetries"));
     }
 }

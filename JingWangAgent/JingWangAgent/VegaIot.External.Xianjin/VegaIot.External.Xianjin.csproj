@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="VgAutoDrill.Fundation" Version="3.9.3.1415" />
+    <PackageReference Include="VgAutoDrill.Fundation.CNC" Version="3.9.3.1415" />
+    <PackageReference Include="FluentFTP" Version="51.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.xianjin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

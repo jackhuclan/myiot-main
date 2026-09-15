@@ -1,0 +1,142 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "150097",
+      "name": "启动",
+      "font_class": "qidong",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "375926",
+      "name": "已停止",
+      "font_class": "yitingzhi",
+      "unicode": "e6a7",
+      "unicode_decimal": 59047
+    },
+    {
+      "icon_id": "974912",
+      "name": "通知",
+      "font_class": "tongzhi",
+      "unicode": "e6c8",
+      "unicode_decimal": 59080
+    },
+    {
+      "icon_id": "3607064",
+      "name": "绿洲_切换",
+      "font_class": "lvzhou_qiehuan",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "7597956",
+      "name": "24gl-insertDown",
+      "font_class": "24gl-insertDown",
+      "unicode": "eb6f",
+      "unicode_decimal": 60271
+    },
+    {
+      "icon_id": "7597958",
+      "name": "24gl-insertUp",
+      "font_class": "24gl-insertUp",
+      "unicode": "eb70",
+      "unicode_decimal": 60272
+    },
+    {
+      "icon_id": "7872849",
+      "name": "停止",
+      "font_class": "tingzhi",
+      "unicode": "e643",
+      "unicode_decimal": 58947
+    },
+    {
+      "icon_id": "8427419",
+      "name": "Smart motor",
+      "font_class": "Smartmotor",
+      "unicode": "e646",
+      "unicode_decimal": 58950
+    },
+    {
+      "icon_id": "8718268",
+      "name": "压平",
+      "font_class": "yaping",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "9582914",
+      "name": "工程-34",
+      "font_class": "gongcheng-",
+      "unicode": "e661",
+      "unicode_decimal": 58977
+    },
+    {
+      "icon_id": "10408646",
+      "name": "换板  40*40",
+      "font_class": "huanban",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "14227050",
+      "name": "启动",
+      "font_class": "qidong1",
+      "unicode": "e6a8",
+      "unicode_decimal": 59048
+    },
+    {
+      "icon_id": "18170183",
+      "name": "登录,进入,进",
+      "font_class": "login",
+      "unicode": "e97e",
+      "unicode_decimal": 59774
+    },
+    {
+      "icon_id": "22481440",
+      "name": "组 10",
+      "font_class": "a-zu10",
+      "unicode": "e64e",
+      "unicode_decimal": 58958
+    },
+    {
+      "icon_id": "23252834",
+      "name": "钻机",
+      "font_class": "zuanji",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "32850004",
+      "name": "VA标定",
+      "font_class": "VAbiaoding",
+      "unicode": "e63c",
+      "unicode_decimal": 58940
+    },
+    {
+      "icon_id": "34387395",
+      "name": "laser-diode.1",
+      "font_class": "a-laser-diode1",
+      "unicode": "e934",
+      "unicode_decimal": 59700
+    },
+    {
+      "icon_id": "34388755",
+      "name": "screw-bolt",
+      "font_class": "screw-bolt",
+      "unicode": "ea88",
+      "unicode_decimal": 60040
+    },
+    {
+      "icon_id": "36100247",
+      "name": "启动",
+      "font_class": "qidong2",
+      "unicode": "e72d",
+      "unicode_decimal": 59181
+    }
+  ]
+}

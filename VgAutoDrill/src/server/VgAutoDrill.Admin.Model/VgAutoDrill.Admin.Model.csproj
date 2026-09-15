@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <FileVersion>1.0.0.1</FileVersion>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>obj\VgAutoDrill.Admin.Model.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+    <NoWarn>1701;1702;1591;1998;8629;1573</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+    <NoWarn>1701;1702;1591;1998;8629;1573</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
+    <PackageReference Include="Npoi.Mapper" Version="3.5.1" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.170" />
+    <PackageReference Include="VgAutoDrill.Fundation.Iot" Version="3.8.11.1152" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VgAutoDrill.Admin.Common\VgAutoDrill.Admin.Common.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ViewModels\Mes\DeviceRecordsSummaryExtend\" />
+    <Folder Include="ViewModels\Mes\ManualCallAgvTask\Res\" />
+  </ItemGroup>
+</Project>

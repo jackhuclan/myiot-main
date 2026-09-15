@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup Label="Version settings">
+    <Version>3.7.30.0941</Version>
+    <Company>VEGA</Company>
+    <Copyright>Copyright@VEGA Technology</Copyright>
+    <WebPage>http://www.vegagroup.cn/</WebPage>
+    <Authors>AutoDrill Team</Authors>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,55 @@
+version: '3.4'
+
+services:
+  vgautodrill_central:
+    image: vegagroup.tech/vgautodrill_central:${BUILD_VERSION}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/vega/central/conf:/app/conf
+      - ~/vega/central/data:/app/data
+      - ~/vega/central/logs:/app/logs
+    ports:
+      - "8001:80"
+      - "1883:1883"
+      
+  vgautodrill_collect:
+    image: vegagroup.tech/vgautodrill_collect:${BUILD_VERSION}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/vega/collect/conf:/app/conf
+      - ~/vega/collect/data:/app/data
+      - ~/vega/collect/logs:/app/logs
+    ports:
+      - "8002:80"
+
+  vgautodrill_agent:
+    image: vegagroup.tech/vgautodrill_agent:${BUILD_VERSION}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/vega/agent/conf:/app/conf
+      - ~/vega/agent/data:/app/data
+      - ~/vega/agent/logs:/app/logs
+    ports:
+      - "8004:80"
+    depends_on:
+      - vgautodrill_central
+      - vgautodrill_collect
+      
+  vgautodrill_admin:
+    image: vegagroup.tech/vgautodrill_admin:${BUILD_VERSION}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/vega/admin/conf:/app/conf
+      - ~/vega/admin/data:/app/data
+      - ~/vega/admin/logs:/app/logs
+    ports:
+      - "8003:80"
+     
+  vgautodrill_admin_front:
+    image: vegagroup.tech/vgautodrill_admin_front:${BUILD_VERSION}
+    ports:
+      - "8005:80"

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VgDeviceGateway.Common\VgDeviceGateway.Devices.Common.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Agv\VgDeviceGateway.Devices.Agv.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Drill\VgDeviceGateway.Devices.Drill.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.xianjiniot.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

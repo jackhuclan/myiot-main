@@ -1,0 +1,1036 @@
+﻿@using System.Text.Json;
+@using System.ComponentModel;
+@using Microsoft.Extensions.Options;
+@using System.Text.Encodings.Web
+@using System.Text.Unicode
+@using VegaIot.External.Hik
+@using VgAutoDrill.OpenAPI
+@using VgDeviceGateway.Devices.Common;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Iot.Configuration;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@using VgDeviceGateway.Devices;
+@using VgDeviceGateway.Devices.Shelf;
+@using System.Text;
+@using static VgDeviceGateway.Devices.Common.Agv.Hik.HikCarStatus
+@inject ILogger<HikTransfer> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IOptions<CentralWebOptions> options;
+@inject IConfiguration configuration
+
+<h3>
+    @transfer.DeviceId - @transfer.DeviceName
+    <div id="status" style="width:30px;height:30px;display:inline-block;background:url(/images/machine.png);background-size:cover;"></div>
+</h3>
+
+<text>料架呼叫事件信息：</text>
+<br />
+@* <h2> <span id="transtext">@transfer.TransIds</span>   </h2> *@
+<h2> <p @ref="transtextElement" id="transtext"></p> </h2>
+<br />
+<button @onclick="ResetCallAgv">
+    重置呼叫AGV信号
+</button>
+
+<button @onclick="ResetAgvIsNotOnWorkSilo">
+    设置AGV取消给料架上料信号
+</button>
+<button @onclick="SetAllReady">
+    一键设置Ready
+</button>
+<button @onclick="SetAllNoReady">
+    一键取消Ready
+</button>
+<button @onclick="ResetAllCallAgv">
+    一键重置呼叫AGV信号
+</button>
+<EditForm Model="@currentContext">
+    <br />
+    <p>
+        选择中转位
+        <Select @onchange="ChageRack" value="@currentContext.RackIndex" style="width:200px;">
+            @if (transfer.DeviceDescriptor.Extra["IsStandAlone"].ToBool())
+            {
+                @for (var i = 0; i < transfer.spindleNum; i++)
+                {
+                    <option value="@i">@(i + 1)</option>
+                }
+            }
+            else
+            {
+                @for (var i = 0; i < transfer.spindleNum; i++)
+                {
+                    <option value="@i">@(transfer.RackInfos[i].PositionCode + "---[" + transfer.RackInfos[i].Code + "]")</option>
+                }
+            }
+
+        </Select>
+        <button @onclick="QueryExternalMaterial">
+            查询当前料架板材信息
+        </button>
+
+        <button @onclick="QueryProperties">
+            查看属性信息
+        </button>
+        <button @onclick="QueryAllExternalMaterial">
+            查询所有料架板材信息
+        </button>
+        @*    <button @onclick="QueryLocationPanels">
+        查询当前料库位板料
+        </button> *@
+    </p>
+    <br />
+
+    <p>
+
+        <button @onclick="PrepareLoadMaterial">
+            准备上料
+        </button>
+        <button @onclick="CompleteLoadMaterial">
+            上料完成
+        </button>
+        <br />
+        <br />
+        <button @onclick="PrepareUnloadMaterial">
+            准备下料
+        </button>
+        <button @onclick="CompleteUnloadMaterial">
+            下料完成
+        </button>
+
+    </p>
+    <br />
+    <br />
+
+    <p>
+        <table>
+            <tr>
+                <td><label>是否存在料仓</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.IsExistSilo>
+                        <option value="false">不存在</option>
+                        <option value="true">存在</option>
+                    </InputSelect>
+                </td>
+            </tr>
+            @if (currentContext.IsExistSilo)
+            {
+                <tr>
+                    <td><label>料仓序号</label></td>
+                    <td>
+                        <InputSelect @bind-Value="currentContext.SiloCode" style="width:100%;">
+                            @foreach (var siloCode in transfer.SiloCodes)
+                            {
+                                <option value="@siloCode">@siloCode </option>
+                            }
+                            @*@for (var i = 0; i < transfer.DeviceDescriptor.Extra["ShelfNames"].ToString().Split(','); i++)
+                        {
+                        <option value="@i">@(i + 1)</option>
+                        }*@
+                        </InputSelect>
+
+                    </td>
+
+                    <td style="padding-left:10px" align="right">
+                        <label >料仓匹配:</label>
+                    </td>
+                    <td><InputText @bind-Value="currentContext.SiloMatch" style="width:100%;"></InputText></td>
+                    <td style="padding-left:5px">
+                        <button @onclick="ReloadSiloCodes">
+                            更新料仓编号
+                        </button>
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td><label>请输入起始层</label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.StartLayer>
+                            @for (var i = 0; i < transfer.DeviceDescriptor.LayerLimit.ToInt(); i++)
+                            {
+                                <option value="@i">@(i + 1) 层</option>
+                            }
+                        </InputSelect>
+                    </td>
+                    @*      &nbsp;
+                <td>
+                <label>本层片数</label>
+
+                <InputSelect @bind-Value=@currentContext.Pcs>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                </InputSelect>
+                </td> *@
+                </tr>
+
+                <tr>
+                    <td><label>板料类型</label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.PanelType>
+                            <option value="0">空</option>
+                            <option value="1">生料</option>
+                            <option value="2">熟料</option>
+                        </InputSelect>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>请输入物料代码</label></td>
+                    <td>
+                        <InputSelect @bind-Value="currentContext.ItemCode" style="width:100%;">
+                            @if (transfer.MaterialModels != null)
+                            {
+                                @foreach (var rh in transfer.MaterialModels)
+                                {
+                                    <option value="@rh.Code">@rh.Code</option>
+                                }
+                            }
+                        </InputSelect>
+                    </td>
+                    <td align="center"><label>排序: </label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.ItemOrder>
+                            <option value="2" selected>按创建时间倒序</option>
+                            <option value="3">按物料代码正序</option>
+                            <option value="4">按物料代码倒序</option>
+                        </InputSelect>
+                    </td>
+                    <td style="padding-left:10px" align="right"><label>模糊匹配: </label></td>
+                    <td> <InputText @bind-Value=@currentContext.MaterialMatchCode></InputText></td>
+                    <td style="padding-left:5px">
+                        <button @onclick="ReloadMaterialCodes">
+                            刷新物料
+                        </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label>装载到料架的Panel数量</label>
+                    </td>
+                    <td>
+                        <InputNumber @bind-Value=@currentContext.RawPanelCount></InputNumber>
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                        <label>板料宽度</label>
+                    </td>
+                    <td>
+                        <InputNumber @bind-Value=@currentContext.PanelWidth></InputNumber>
+                    </td>
+                    <td>
+                        <p>请输入低于625的值</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>每层片数</label>
+                    </td>
+                    <td>
+                        <InputNumber @bind-Value=@currentContext.Pcs></InputNumber>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <InputSelect @bind-Value=@currentContext.PanelTypeWhenExistNoSilo>
+                    <option value="20100">Pin机输出20100</option>
+                    <option value="40100">钻机输出熟料40100</option>
+                    <option value="1">空仓</option>
+                </InputSelect>
+            }
+
+        </table>
+        @if (currentContext.IsExistSilo)
+        {
+            @if (!currentContext.isReady)
+            {
+                <button @onclick="LoadExternalMaterial">
+                    加载板料信息
+                </button>
+            }
+            else
+            {
+                <text> 先取消ready状态,再进行板材加载</text>
+            }
+        }
+        else
+        {
+            @if (!currentContext.isReady)
+            {
+                <button @onclick="EnsureNoSilo">
+                    确认无料仓
+                </button>
+            }
+            else
+            {
+                <text> 先取消ready状态,再进行确认无料仓</text>
+            }
+        }
+        <br />
+        <br />
+
+        <p>
+            <button @onclick="SearchStatus">
+                查询Ready状态
+            </button>
+
+            <button @onclick="SetReady">
+                设置Ready状态
+            </button>
+
+            <button @onclick="SetNoReady">
+                取消Ready状态
+            </button>
+            <button @onclick="SetAllCooked">
+                设置满仓全熟料
+            </button>
+        </p>
+        <p>
+            选择物料:
+
+            <InputSelect @bind-Value="@currentContext.ItemCode" style="width:200px;">
+                @if (transfer.MaterialModels != null)
+                {
+                    @foreach (var rh in transfer.MaterialModels)
+                    {
+                        <option value="@rh.Code">@rh.Code</option>
+                    }
+                }
+            </InputSelect>
+            <br />
+            选择AGV:
+            <InputSelect @bind-Value="@currentContext.AGVCode" style="width:200px;">
+                <option value="">--请选择AGV--</option>
+                @foreach (var i in transfer.DeviceDescriptor.Extra["AGVCodes"].ToString().Split(','))
+                {
+                    <option value="@i.ToStr().Trim()">@i </option>
+                }
+            </InputSelect>
+
+            <button @onclick="CallAgv">
+                主叫 AGV(直接发起,测试用)
+            </button>
+        </p>
+    </p>
+    &nbsp;
+    <p>
+        <tr>
+            <td>
+                <InputText @bind-Value=@SensorNo style="width:150px;"></InputText>
+                <button @onclick="TestSensor">
+                    传感器测试
+                </button>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <InputText @bind-Value=@taskCode style="width:150px;"></InputText>
+                <button @onclick="QueryTaskStatus">
+                    查询任务状态
+                </button>
+            </td>
+
+        </tr>
+
+    </p>
+    <p>
+        <tr>
+            <td>
+                <label>物料批次</label>
+                <InputText @bind-Value=@material style="width:240px;"></InputText>
+                &nbsp;
+                <label>料仓编号</label>
+                <InputText @bind-Value=@SiloCode style="width:150px;"></InputText>
+                &nbsp; &nbsp;
+                <button @onclick="unBindMaterialAndSilo">
+                    解绑物料与料架
+                </button>
+            </td>
+        </tr>
+
+    </P>
+    <p>
+
+
+    </p>
+    <p>当前信息</p>
+    <p style="font-size:large;" @ref="messageElement">@currentContext.Message</p>
+</EditForm>
+
+@code {
+    private ElementReference messageElement;
+    private ElementReference transtextElement;
+    private CentralWebOptions centralWebOptions;
+    private List<MaterialModel> _rhModel = new List<MaterialModel> { new MaterialModel { Code = "" } };
+    private List<string> SiloCodes { get; set; } = new List<string>() { "" };
+    private string TransactionId = "";
+    private string SensorNo = string.Empty;
+    private string taskCode = string.Empty;
+    private string hikTaskCode = string.Empty;
+    private string material = string.Empty;
+    private string SiloCode = string.Empty;
+    private string bind = string.Empty;
+    private string pcs = string.Empty;
+    private string mapDataCode = string.Empty;
+    private string shelfName = string.Empty;
+
+
+    void UpdateValue(IHandleEvent? receiver, MulticastDelegate? de)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void ReloadMaterialCodes()
+    {
+        // _rhModel.Clear();
+        await transfer.GetPanelItemCodeAsync((QueryOrderByEnum)currentContext.ItemOrder, currentContext.MaterialMatchCode);
+        // _rhModel.AddRange(_centralReporter.MaterialModels);
+        OutputMessage($"获取物料代码成功，当前排序方式：{((QueryOrderByEnum)currentContext.ItemOrder).ToString()}", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+
+    HikTransfer transfer;
+    CurrentContext currentContext;
+    LocationData<SiloShelf> currentLocation;
+    JsonSerializerOptions Jsonoptions;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        centralWebOptions = options.Value;
+    }
+
+    private void ChageRack(ChangeEventArgs e)
+    {
+        transfer.ShelfIndex = (e.Value.ToInt() + 1).ToString();
+        currentLocation = transfer.Locations[transfer.ShelfIndex];
+        currentContext = currentLocation.CurrentContext;
+        currentContext.RackIndex = e.Value.ToInt();
+    }
+
+    protected override void OnInitialized()
+    {
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        transfer = deviceProvider.GetDevice(deviceId) as HikTransfer;
+
+        if (transfer == null || !transfer.Locations.Any()) return;
+
+        currentLocation = transfer.Locations[transfer.ShelfIndex];
+        currentContext = currentLocation.CurrentContext;
+        currentContext.RawPanelCount = transfer.DeviceDescriptor.LayerLimit.ToInt();
+
+        Jsonoptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = true
+            };
+
+        //  var timer = new Timer(_ =>
+        // {
+        //     OutputMessageTranc(_centralReporter.TransactionMessages);
+
+        // }, null, 300, 1000 * 2);
+        AddWatchProperty();
+    }
+
+    private void AddWatchProperty()
+    {
+        transfer.WatchingProperties.Property("TranscationChange")
+        .When(p => p.NewValue.ToBool() == true)
+        .TriggerAlways(() =>
+        {
+            StringBuilder sbl = new StringBuilder();
+            foreach (var location in transfer.Locations.Values)
+            {
+                if (!string.IsNullOrWhiteSpace(location.TransactionMessage))
+                    sbl.Append($"{location.TransactionMessage} \r\n");
+            }
+
+            OutputMessageTranc(sbl.ToString());
+        });
+    }
+
+    private void Show(bool res)
+    {
+        if (res)
+        {
+            this.JSRuntime.InvokeVoidAsync("success");
+        }
+        else
+        {
+            this.JSRuntime.InvokeVoidAsync("fail");
+        }
+    }
+
+    private async void OutputMessage(string message, bool reset = false)
+    {
+        message = $"{message}{Environment.NewLine}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("setElementText1", messageElement, message);
+    }
+
+    private void OutputMessageTranc(string message)
+    {
+        //  this.JSRuntime.InvokeVoidAsync("UpdateInf", "transtext", message);
+        this.JSRuntime.InvokeVoidAsync("setElementText1", transtextElement, message);
+    }
+
+    private async Task GetRackInfo()
+    {
+        var response = await transfer.GetRackInfo();
+
+        OutputMessage($"PrepareLoadMaterial 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+    }
+
+    private async Task ReloadSiloCodes()
+    {
+        if (SiloCodes == null)
+            SiloCodes = new List<string>();
+        else
+            SiloCodes.Clear();
+        SiloCodes.Add("");
+
+        //var siloCodes = await transfer.GetSiloCodeAsync();
+        var siloCodes = await transfer.GetSiloCodeAsync(currentContext.SiloMatch);
+        SiloCodes.AddRange(siloCodes);
+        transfer.SiloCodes = SiloCodes;
+        OutputMessage("更新料仓编码成功", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+    private async void PrepareLoadMaterial()
+    {
+        var response = await transfer.PrepareLoadMaterial(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                    {
+                        { "SiloPosition",currentContext.RackIndex+1},
+
+                    }
+            });
+        OutputMessage($"PrepareLoadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+
+    }
+    private async void CompleteLoadMaterial()
+    {
+        List<Panel> panels = new List<Panel>();
+        for (int i = 0; i < transfer.DeviceDescriptor.LayerLimit.ToInt(); i++)
+        {
+            panels.Add(new Panel()
+                {
+                    BatchCode = "p1",
+                    ItemCode = "item01",
+                    PanelCode = "123456",
+                    Position = currentContext.ShelfIndex,
+                    Layer = i,
+
+                });
+        }
+
+        var response = await transfer.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                    { "SiloPosition",currentContext.RackIndex+1},
+                     { "LoadingPanel",new SwapPanel()
+                        {
+                          PanelList=panels
+                        }
+                     },
+                     { "ShelfIndex",currentContext.RackIndex+1}
+                },
+                CallerRequestInputProductStatus = ProductStatus.PRE_POST_BUFFER_TRANSFER_AGV_OUTPUT_1
+            });
+        OutputMessage($"CompleteLoadMaterial 函数执行结果:【{response.Code}】\r\n{response.Message}", true);
+        Show(true);
+    }
+
+    private async void PrepareUnloadMaterial()
+    {
+        var response = await transfer.PrepareUnloadMaterial(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                    {
+                        { "SiloPosition",currentContext.RackIndex+1},
+
+                    }
+            });
+        OutputMessage($"PrepareUnloadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+
+    }
+    private async void CompleteUnloadMaterial()
+    {
+
+        var response = await transfer.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                    {
+                        { "SiloPosition",currentContext.RackIndex+1},
+
+                    }
+            });
+        OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+        Show(true);
+    }
+
+
+    private async Task EnsureNoSilo()
+    {
+        await transfer.Locations[(currentContext.ShelfIndex).ToStr()].SetNoPayload();
+        QueryExternalMaterial();
+    }
+
+    private async void ResetAgvIsNotOnWorkSilo()
+    {
+        transfer.Locations[(currentContext.ShelfIndex).ToStr()].IsAgvWorking = false;
+        OutputMessage($"ResetAgvIsNotOnWorkSilo 函数执行结果:【设置agv是否在给料架上料 false 】", true);
+    }
+    private async void ResetCallAgv()
+    {
+        var response = await transfer.CompleteSchedule(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                EventId = $"event#{currentContext.ShelfIndex}",
+                ScheduledStatus = VgAutoDrill.Fundation.Iot.Schedule.ScheduledTaskStatus.Canceled
+            });
+        OutputMessage($"ResetCallAgv 函数执行结果:【{response.Code}】", true);
+    }
+
+    private async void LoadExternalMaterial()
+    {
+        if (string.IsNullOrEmpty(currentContext.SiloCode))
+        {
+            OutputMessage("请选择料仓", true);
+            return;
+        }
+
+        currentLocation.Panels.ForEach(p => p.SiloCode = currentContext.SiloCode);
+
+        if (currentLocation.Panels.Count() == 0)
+        {
+            transfer.Locations[currentContext.ShelfIndex.ToString()].LoadPanels();
+            //OutputMessage("板料不存在", true);
+            //return;
+        }
+
+        var locationsWithSameSiloCode = transfer.Locations.Values.Where(x => x.CurrentContext.SiloCode == currentContext.SiloCode && x.LocationCode != currentContext.LocationCode);
+        if (locationsWithSameSiloCode.Any())
+        {
+            OutputMessage($"{locationsWithSameSiloCode.First().LocationCode}已经设定了料仓号为{currentContext.SiloCode}", true);
+            return;
+        }
+
+        if (currentContext.PanelType != 0 && string.IsNullOrEmpty(currentContext.ItemCode))
+        {
+            OutputMessage("请输入物料代码", true);
+            return;
+        }
+        if (currentContext.PanelWidth > 625)
+        {
+            OutputMessage("请输入输入低于或等于625的板宽", true);
+            return;
+        }
+        if (currentContext.StartLayer + currentContext.RawPanelCount > transfer.DeviceDescriptor.LayerLimit.ToInt())
+        {
+            OutputMessage($"层数+加载数量不能大于{transfer.DeviceDescriptor.LayerLimit.ToInt()}层", true);
+            return;
+        }
+
+        transfer.Locations[(currentContext.ShelfIndex).ToStr()].UpdatePanelStatusFromEmptyPayloadToEmptySiloBox();
+
+        var layer = currentContext.StartLayer;
+        var productStatus = ProductStatus.EmptySiloBox;
+
+        if (currentContext.PanelType == 1)
+        {
+            productStatus = ProductStatus.Finished_PRE_BUFFER;
+        }
+        else if (currentContext.PanelType == 2)
+        {
+            productStatus = ProductStatus.PRE_POST_BUFFER_TRANSFER_AGV_OUTPUT_1;
+        }
+
+        GetNextPanelRequest request = new GetNextPanelRequest()
+            {
+                BeginLayer = currentContext.StartLayer,
+                Count = currentContext.RawPanelCount,
+                ItemCode = currentContext.ItemCode,
+                PanelWidth = currentContext.PanelWidth,
+                PinOffset = currentContext.PinOffset,
+                ProductStatus = productStatus,
+                SiloCode = "",
+                Position = 1,
+                BatchCode = "",
+                LotId = "",
+            };
+
+        var response = await httpRequestInvoker.PostAsJsonAsync<GetNextPanelRequest, List<Panel>>(transfer.DeviceDescriptor.Extra["GetNextPanelNumberV2"].ToStr(), request);
+
+        //List<Panel?> panels = new List<Panel?>();
+        var temp = transfer.Locations[currentContext.ShelfIndex.ToString()];
+        for (var i = 0; i < currentContext.RawPanelCount; i++)
+        // && response != null
+        // && response.Count == currentContext.RawPanelCount
+        {
+            //var panel = transfer.Locations[currentContext.ShelfIndex.ToString()].Panels[i];
+            var panel = temp.Panels[layer];
+            var panelInf = Guid.NewGuid().ToString();
+            if (response != null && response.Count > i)
+            {
+                panelInf = response[i].PanelCode;
+            }
+
+            if (currentContext.PanelType == 0)
+            {
+                panel.PanelCode = "";
+                panel.ItemCode = "";
+                panel.LocationCode = currentContext.LocationCode;
+                panel.SiloCode = currentContext.SiloCode;
+                panel.Layer = layer;
+                panel.Position = currentContext.ShelfIndex;
+                panel.BatchCode = "";
+                panel.LotId = "";
+                panel.PanelWidth = 0;
+                panel.PinOffset = 0;
+                panel.ProductStatus = productStatus;
+                layer++;
+            }
+            else
+            {
+
+                panel.PanelCode = string.IsNullOrEmpty(currentLocation.Panels[layer].PanelCode) ? panelInf : currentLocation.Panels[layer].PanelCode;
+                panel.Barcode = string.IsNullOrEmpty(currentLocation.Panels[layer].Barcode) ? panelInf : currentLocation.Panels[layer].Barcode;
+                panel.ItemCode = currentContext.ItemCode;
+                panel.LocationCode = currentContext.LocationCode;
+                panel.SiloCode = currentContext.SiloCode;
+                panel.Layer = layer;
+                panel.Position = currentContext.ShelfIndex;
+                panel.BatchCode = "";
+                panel.LotId = "";
+                panel.Pcs = currentContext.Pcs;
+                panel.PanelWidth = currentContext.PanelWidth;
+                panel.PinOffset = 0;
+                panel.ProductStatus = productStatus;
+
+                layer++;
+            }
+        }
+
+        //transfer.Locations[(currentContext.ShelfIndex).ToStr()].UpdateSiloInfoByPositionAndIndex(currentContext.StartLayer, panels);
+        transfer.Locations[currentContext.ShelfIndex.ToString()].SavePanels();
+        //transfer.setNewPanelLog(transfer.Locations[currentContext.ShelfIndex.ToString()].Panels, (currentContext.ShelfIndex).ToString());
+        transfer.setNewPanelLog(temp.Panels, (currentContext.ShelfIndex).ToString());
+        QueryExternalMaterial();
+    }
+
+    private void QueryExternalMaterial()
+    {
+        // var shelfIndex = currentContext.ShelfIndex;
+        // var allstr = $"第{shelfIndex}号料架" + Environment.NewLine; ;
+        // for (int i = currentContext.RackIndex * _centralReporter.DeviceDescriptor.LayerLimit; i < currentContext.RackIndex * _centralReporter.DeviceDescriptor.LayerLimit + _centralReporter.DeviceDescriptor.LayerLimit; i++)
+        // {
+        //     allstr += $"第{i + 1 - _centralReporter.layerLimit * currentContext.RackIndex}层：{Newtonsoft.Json.JsonConvert.SerializeObject(_centralReporter.PayloadPanels[i])} {Environment.NewLine}";
+        // }
+
+        // OutputMessage(allstr, true);
+        // Show(true);
+
+        QueryLocationPanels();
+    }
+
+    private void QueryLocationPanels()
+    {
+        var shelfIndex = currentContext.ShelfIndex;
+        var allstr = $"第{shelfIndex}号料架" + Environment.NewLine;
+        var panels = transfer.Locations[(currentContext.ShelfIndex).ToStr()].Panels;
+
+        for (int i = 0; i < panels.Count; i++)
+        {
+            //allstr += $"第{i + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(panels[i])} {Environment.NewLine}";
+            string status = GetPanelOrSiloStstus( panels[i].ProductStatus);
+            allstr += $"第{i + 1}层：料仓号:{panels[i].SiloCode ?? ""}， 料号:{panels[i].ItemCode ?? ""}， 位置:{panels[i].LocationCode ?? ""}， 板料状态：{status}， 片数：{(int)panels[i].Pcs}， 是否首件：{panels[i].IsFirst}{Environment.NewLine}";
+        }
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    public string GetPanelOrSiloStstus(ProductStatus status)
+    {
+        string res = "";
+        if (ProductStatusConstants.EmptySiloBox.Contains(status))
+        {
+            res = "空料仓";
+        }
+        else if (ProductStatusConstants.EmptyPayload.Contains(status))
+        {
+            res = "无料仓";
+        }
+        else if (ProductStatusConstants.Finished_PIN.Contains(status))
+        {
+            res = "生料";
+        }
+        else if (ProductStatusConstants.Finished_DRILL.Contains(status))
+        {
+            res = "熟料";
+        }
+        else
+        {
+            res = "异常";
+        }
+        return res;
+    }
+
+    private void QueryAllLocationPanels()
+    {
+        string allstr = string.Empty;
+        foreach (var location in transfer.Locations)
+        {
+            allstr += $"{Environment.NewLine}第{location.Key}个料架: {Environment.NewLine}";
+            foreach (var item in location.Value.Panels)
+            {
+              //  allstr += $"第{item.Layer + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(item)} {Environment.NewLine}";
+           
+                string status = GetPanelOrSiloStstus(item.ProductStatus);
+                allstr += $"第{item.Layer + 1}层：料仓号:{item.SiloCode ?? ""}，  料号:{item.ItemCode ?? ""}，  位置:{item.LocationCode ?? ""}，  板料状态：{status}，  片数：{(int)item.Pcs},  是否首件：{item.IsFirst}{Environment.NewLine}";
+            }
+        }
+
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private void QueryAllExternalMaterial()
+    {
+        // string allstr = string.Empty;
+        // for (int i = 0; i < _centralReporter.spindleNum * _centralReporter.DeviceDescriptor.LayerLimit; i++)
+        // {
+        //     allstr += $"第{i + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(_centralReporter.PayloadPanels[i])} {Environment.NewLine}";
+        // }
+        // OutputMessage(allstr, true);
+        // Show(true);
+        QueryAllLocationPanels();
+    }
+
+    private async Task QueryProperties()
+    {
+        var aaa = transfer.WatchingProperties.GetValues();
+        var allstr = "";
+        foreach (var item in aaa)
+        {
+            allstr += $"{item.Key}:{System.Text.Json.JsonSerializer.Serialize(item.Value, Jsonoptions).Replace("\r\n", "")} \r\n";
+        }
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private async void SearchStatus()
+    {
+        var aaa = currentContext.isReady;
+        OutputMessage("是否是ready状态 ：" + aaa.ToString(), true);
+        Show(true);
+    }
+
+    private async void SetReady()
+    {
+        var response = await transfer.WriteProperties(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            });
+
+        var location = transfer.Locations[(currentContext.ShelfIndex).ToStr()];
+        if (!location.Panels.IsEmptyPayload
+            && string.IsNullOrWhiteSpace(location.Panels.SiloCode))
+        {
+            OutputMessage($"不是空料仓的情况下，必须设定料仓号", true);
+            Show(true);
+            return;
+        }
+
+        location.IsReady = true;
+        logger.LogInformation($"Trace_Ready : SetReady: 人工设置了 {location.LocationCode}: Ready=true");
+        location.CurrentContext.isReady = true;
+        OutputMessage(response.Message + $"是否Ready {currentContext.isReady}", true);
+        Show(true);
+    }
+
+    private async void SetAllReady()
+    {
+        var response = await transfer.WriteProperties(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            });
+
+        foreach (var location in transfer.Locations.Values)
+        {
+            if (!location.Panels.IsEmptyPayload
+            && string.IsNullOrWhiteSpace(location.Panels.SiloCode))
+            {
+                OutputMessage($"{location.LocationCode}不是空料仓的情况下，必须设定料仓号", true);
+                Show(true);
+                return;
+            }
+
+            location.IsReady = true;
+            logger.LogInformation($"Trace_Ready : SetAllReady: 人工设置了 {location.LocationCode}  Ready=true");
+            location.CurrentContext.isReady = true;
+        }
+
+        OutputMessage(response.Message + $"已全部设置Ready", true);
+        Show(true);
+    }
+    private async void ResetAllCallAgv()
+    {
+        foreach (var location in transfer.Locations.Values)
+        {
+            location.IsCanCallAgv = true;
+            logger.LogInformation($" ResetAllCallAgv: 人工设置了 {location.LocationCode}  IsCanCallAgv=true");
+        }
+
+        OutputMessage($"重置允许呼叫AGV信号完成", true);
+        Show(true);
+    }
+    private async void SetAllNoReady()
+    {
+        var response = await transfer.WriteProperties(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            });
+
+        foreach (var location in transfer.Locations.Values)
+        {
+            location.IsReady = false;
+            logger.LogInformation($"Trace_Ready : SetAllNoReady: 人工设置了 {location.LocationCode}  Ready=false");
+            location.CurrentContext.isReady = false;
+            await location.CancelSchdule();
+        }
+
+        OutputMessage(response.Message + $"已全部取消Ready", true);
+        Show(true);
+    }
+
+    private async void SetNoReady()
+    {
+        var response = await transfer.WriteProperties(new DeviceServiceInvokeRequest
+            {
+                ProductId = transfer.ProductId,
+                DeviceId = transfer.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            });
+
+        transfer.Locations[(currentContext.ShelfIndex).ToStr()].IsReady = false;
+        logger.LogInformation($"Trace_Ready : SetNoReady: 人工设置了 {transfer.Locations[(currentContext.ShelfIndex).ToStr()].LocationCode}: Ready=false");
+        transfer.Locations[(currentContext.ShelfIndex).ToStr()].CurrentContext.isReady = false;
+        await transfer.Locations[(currentContext.ShelfIndex).ToStr()].CancelSchdule();
+        OutputMessage(response.Message + $"是否Ready {currentContext.isReady}", true);
+        Show(true);
+    }
+
+    private async void SetAllCooked()
+    {
+        transfer.Locations[(currentContext.ShelfIndex).ToStr()].SetAllCookedStatus();
+        QueryExternalMaterial();
+    }
+
+    private async void CallAgv()
+    {
+        var message = await transfer.ForeCallAgv(currentContext.ShelfIndex);
+        OutputMessage(message, true);
+    }
+
+    private void TestSensor()
+    {
+        try
+        {
+            int temp = SensorNo.ToInt();
+            var messages = transfer.SelectSensor(temp);
+            OutputMessage($"中转位置{temp}探测结果：{messages}", true);
+        }
+        catch (Exception ex)
+        {
+            string message = ex.Message;
+            OutputMessage(message, true);
+        }
+    }
+
+    private async void QueryTaskStatus()
+    {
+        var messages = await transfer.QueryTaskStatus(taskCode);
+        if (!string.IsNullOrEmpty(messages))
+        {
+            var res = transfer.GetTaskStatus(hikTaskCode);
+            OutputMessage($"任务{taskCode}状态为 ：{res}", true);
+        }
+        else
+        {
+            messages = $"未查询到任务{taskCode}的状态";
+            OutputMessage(messages, true);
+        }
+    }
+
+
+
+    private async void unBindMaterialAndSilo()
+    {
+        if (string.IsNullOrEmpty(SiloCode) || string.IsNullOrEmpty(material))
+        {
+            OutputMessage("解绑物料时料仓或者物料不能为空", true);
+            return;
+        }
+        string bind = "0";
+        string pcs = "";
+        string mapDataCode = "";
+        material = "";
+        SiloCode = "";
+
+        var messages = await transfer.bindLineSideStock(new BindLineSideStock
+            {
+                reqCode = "VegaTask" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                reqTime = "",
+                clientCode = "",
+                podCode = SiloCode,
+                indBind = bind,
+                mapDataCode = mapDataCode,
+                materialLot = material,
+                materialGroupCode = "",
+                materialCode = "",
+                sysLotNum = "",
+                podLotNum = pcs,
+                lotStatus = "OK",
+                includeScrap = "0"
+            });
+
+        OutputMessage(messages, true);
+    }
+}

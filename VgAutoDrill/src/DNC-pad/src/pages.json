@@ -1,0 +1,187 @@
+{
+  "leftWindow": {
+    "path": "windows/left-window.vue",
+    "style": {
+      "width": "100px"
+    }
+  },
+  "topWindow": {
+    "path": "windows/top-window.vue",
+    "style": {
+      "height": "60px"
+    },
+    "matchMedia": {
+      "minWidth": 0
+    }
+  },
+  "pages": [
+    // pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "app-plus": {
+          "bounce": "vertical",
+          "titleNView": {
+            "buttons": [
+              {
+                "text": "\ue534",
+                "fontSrc": "/static/uni.ttf",
+                "fontSize": "22px",
+                "color": "#FFFFFF"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/logs/logs",
+      "style": {
+        "navigationBarTitleText": "日志",
+        "app-plus": {
+          "bounce": "vertical",
+          "titleNView": {
+            "buttons": [
+              {
+                "text": "\ue534",
+                "fontSrc": "/static/uni.ttf",
+                "fontSize": "22px",
+                "color": "#FFFFFF"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/setting/setting",
+      "style": {
+        "navigationBarTitleText": "配置",
+        "app-plus": {
+          "bounce": "vertical",
+          "titleNView": {
+            "buttons": [
+              {
+                "text": "\ue534",
+                "fontSrc": "/static/uni.ttf",
+                "fontSize": "22px",
+                "color": "#FFFFFF"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/mine/mobile",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+
+    {
+      "path": "pages/mine/info/index",
+      "style": {
+        "navigationBarTitleText": "个人信息"
+      }
+    },
+    {
+      "path": "pages/mine/info/edit",
+      "style": {
+        "navigationBarTitleText": "编辑资料"
+      }
+    },
+    {
+      "path": "pages/mine/pwd/index",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+    {
+      "path": "pages/mine/pc",
+      "style": {
+        "navigationBarTitleText": "修改信息"
+      }
+    },
+    {
+      "path": "pages/mine/setting/index",
+      "style": {
+        "navigationBarTitleText": "应用设置"
+      }
+    },
+
+    {
+      "path": "pages/mine/about/index",
+      "style": {
+        "navigationBarTitleText": "关于我们"
+      }
+    },
+    {
+      "path": "pages/error/404",
+      "style": {
+        "topWindow": false,
+        "leftWindow": false,
+        "navigationBarTitleText": "Not Found"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "topWindow": false,
+        "leftWindow": false,
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+
+  "globalStyle": {
+    "pageOrientation": "portrait",
+    "navigationBarTitleText": "Hello uniapp",
+    "navigationBarTextStyle": "white",
+    "navigationBarBackgroundColor": "#007AFF",
+    "backgroundColor": "#F8F8F8",
+    "backgroundColorTop": "#F4F5F6",
+    "backgroundColorBottom": "#F4F5F6",
+    "mp-360": {
+      "navigationStyle": "custom"
+    },
+    "h5": {
+      "navigationStyle": "custom",
+      "navigationBarTextStyle": "black",
+      "navigationBarBackgroundColor": "#F1F1F1"
+    }
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#007AFF",
+    "borderStyle": "black",
+    "backgroundColor": "#F8F8F8",
+    "list": [
+      {
+        "text": "首页",
+        "iconPath": "/static/imgs/home.png",
+        "pagePath": "pages/index/index",
+        "selectedIconPath": "/static/imgs/home-select.png"
+      },
+      {
+        "text": "日志",
+        "iconPath": "/static/imgs/log.png",
+        "pagePath": "pages/logs/logs",
+        "selectedIconPath": "/static/imgs/log-select.png"
+      },
+      {
+        "text": "配置",
+        "iconPath": "/static/imgs/workbench.png",
+        "pagePath": "pages/setting/setting",
+        "selectedIconPath": "/static/imgs/workbench-select.png"
+      },
+      {
+        "pagePath": "pages/mine/mobile",
+        "iconPath": "static/imgs/mine.png",
+        "selectedIconPath": "static/imgs/mine_.png",
+        "text": "我的"
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+FROM nginx:latest
+WORKDIR /app
+COPY "./docs/nginx.conf" /etc/nginx
+COPY "./docs/sources.list" /etc/apt
+COPY "./src/dashboard/dist/" /usr/share/nginx/html

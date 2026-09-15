@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <BaseOutputPath>
+    </BaseOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="appsettings.JingWang.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="appsettings.JingWang.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="VgAutoDrill.Fundation" Version="2.11.28.1409" />
+    <PackageReference Include="VgAutoDrill.Fundation.CNC" Version="2.11.28.1409" />
+    <PackageReference Include="VgAutoDrill.Infrastructure" Version="2.11.28.1409" />
+    <PackageReference Include="SqlSugar.IOC" Version="1.7.0" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.102" />
+  </ItemGroup>
+</Project>

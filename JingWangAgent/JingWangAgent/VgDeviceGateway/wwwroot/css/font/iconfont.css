@@ -1,0 +1,88 @@
+@font-face {
+    font-family: "iconfont"; /* Project id  */
+    src: url('iconfont.ttf?t=1691024796969') format('truetype');
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-qidong:before {
+    content: "\e60b";
+}
+
+.icon-yitingzhi:before {
+    content: "\e6a7";
+}
+
+.icon-tongzhi:before {
+    content: "\e6c8";
+}
+
+.icon-lvzhou_qiehuan:before {
+    content: "\e628";
+}
+
+.icon-24gl-insertDown:before {
+    content: "\eb6f";
+}
+
+.icon-24gl-insertUp:before {
+    content: "\eb70";
+}
+
+.icon-tingzhi:before {
+    content: "\e643";
+}
+
+.icon-Smartmotor:before {
+    content: "\e646";
+}
+
+.icon-yaping:before {
+    content: "\e607";
+}
+
+.icon-gongcheng-:before {
+    content: "\e661";
+}
+
+.icon-huanban:before {
+    content: "\e61b";
+}
+
+.icon-qidong1:before {
+    content: "\e6a8";
+}
+
+.icon-login:before {
+    content: "\e97e";
+}
+
+.icon-a-zu10:before {
+    content: "\e64e";
+}
+
+.icon-zuanji:before {
+    content: "\e61a";
+}
+
+.icon-VAbiaoding:before {
+    content: "\e63c";
+}
+
+.icon-a-laser-diode1:before {
+    content: "\e934";
+}
+
+.icon-screw-bolt:before {
+    content: "\ea88";
+}
+
+.icon-qidong2:before {
+    content: "\e72d";
+}

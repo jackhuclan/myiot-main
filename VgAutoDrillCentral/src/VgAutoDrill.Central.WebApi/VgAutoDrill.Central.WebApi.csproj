@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591;8603;8602;8601</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;1591;8603;8602;8601</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="conf\NLog.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="conf\NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Polly" Version="8.5.0" />
+    <PackageReference Include="SqlSugar.IOC" Version="1.7.0" />
+    <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.2.2" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.170" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\plugin\VegaIot.External.Agv\VegaIot.External.Agv.csproj" />
+    <ProjectReference Include="..\plugin\VegaIot.External.AjwAgv\VegaIot.External.AjwAgv.csproj" />
+    <ProjectReference Include="..\plugin\VegaIot.External.Bomin\VegaIot.External.Bomin.csproj" />
+    <ProjectReference Include="..\plugin\VegaIot.External.HikAgv\VegaIot.External.HikAgv.csproj" />
+    <ProjectReference Include="..\plugin\VegaIot.External.StdAgv\VegaIot.External.StdAgv.csproj" />
+    <ProjectReference Include="..\plugin\VegaIot.External.XianJin\VegaIot.External.XianJin.csproj" />
+    <ProjectReference Include="..\VegaIot.External.ShenzhenKinwong\VegaIot.External.ShenzhenKinwong.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.Central\VgAutoDrill.Central.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="conf\appsettings.Test.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="conf\appsettings.Production.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="conf\appsettings.Development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

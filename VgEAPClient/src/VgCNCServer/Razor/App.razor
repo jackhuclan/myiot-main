@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="favicon.png">
+    <title>Vega CNC Server</title>
+    <base href="/" />
+    <link href="_content/Masa.Blazor/css/masa-blazor.min.css" rel="stylesheet">
+    <link href="css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="css/materialicons.css" rel="stylesheet">
+    <link href="css/all.css" rel="stylesheet">
+    <link href="css/masa-blazor-pro.css" rel="stylesheet" />  
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="css/selectStyles.css" rel="stylesheet" />
+    <link href="VgCNCServer.styles.css" rel="stylesheet" />
+    <HeadOutlet @rendermode="@InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="@InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Masa.Blazor/js/masa-blazor.js"></script>
+    <script src="css/echarts.min.js"></script>
+</body>
+
+</html>

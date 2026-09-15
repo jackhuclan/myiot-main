@@ -1,0 +1,6 @@
+{
+    "FakePluginSetupOptions": {
+        "MyProperty": "this is property for plugin 1",
+        "TestKind": "Two"
+    }
+}

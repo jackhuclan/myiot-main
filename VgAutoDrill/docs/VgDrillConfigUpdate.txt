@@ -1,0 +1,55 @@
+-- 0905
+"RefreshStock": true, //是否刷新库存
+"AutoVettingDrillTask": false, //是否自动审批钻孔任务
+
+
+-- 0906
+"CleanLockerData": "http://192.168.102.115:8001/v1/central/schedule/resetScheduleLocker" // 重置redis叫料 锁 的Key
+
+
+-- 0907
+"ResetAgvCallLimit": "http://192.168.102.115:8001/v1/central/schedule/resetAgvCallLimit" //重置AGV信号
+"CentralOnlineDevice": "http://192.168.102.115:8001/v1/central/device/GetOnlineDeviceList", //中控在线设备列表
+
+-- 1025
+"ImportStatus": true, //导入的数据默认状态为:可用
+
+--0203 admin api AppConfig
+ "GetDeviceGatewayVersion": "/Update/CheckPackages", //获取程序版本
+ "SetUpDeviceGatewayApp": "/Update/InstallPackages" //获取程序版本
+
+ --0615
+ vgautodrill_admin
+ "ReBindSilo": "http://localhost:8001/v1/central/schedule/reBindSilo",
+
+
+--0618
+"DirectBuildTask": true, //导入外部工单，是否直接生成排产任务
+
+-- 0623, 针对外部接口 增加了新的配置节
+"ExternalOptions": {
+    "ConsumingPerSeconds": 5,
+    "EnableAutoImportJiangXiKinWong": false,
+    "DirectBuildTask": false,
+    "UrlJiangXiKinWongWIP": "http://10.50.220.20:8799/MesService.svc/kwDrWipQuery",
+    "DefaultRouteCode": "A0001",
+    "DefaultProductCategoryCode": "P01"
+  }
+
+
+-- 0625
+"SetTitleLabel1": "维嘉中控调度系统", //标题1
+"SetTitleLabel2": "-正式-江西PCB三厂", //标题2
+"MockSettingSilo": true //是否为模拟测试设置就绪
+
+-- 异常处理，下发板料等
+"AllotsPanelData": "http://localhost:8001/v1/central/schedule/AllotsPanelData",
+
+-- 2024/12/30, 追加此配置
+
+  "InnerOptions": {
+    "ConsumingPerMinutes": 10,
+    "SetScheduleByCentral": true, //调度记录的两个操作 取消、设置紧急，改为调用中控接口
+    "CancelScheduleUrl": "http://vgautodrill_central:8001/v1/central/schedule/cancelSchedule",
+    "SetScheduleUrgentUrl": "http://vgautodrill_central:8001/v1/central/schedule/setScheduleUrgent?id={0}"
+  },

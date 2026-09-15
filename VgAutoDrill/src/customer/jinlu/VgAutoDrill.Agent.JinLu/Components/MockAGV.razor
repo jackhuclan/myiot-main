@@ -1,0 +1,496 @@
+﻿@using System.Text.Json;
+@using System.ComponentModel;
+@using Microsoft.Extensions.Options;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Iot.Configuration;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@using VgAutoDrill.Fundation.Vendor.Agvsz;
+@using VgAutoDrill.Fundation.Vendor.Vega;
+
+@inject ILogger<MockAGV> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IOptions<CentralWebOptions> options;
+
+<h3>
+    @agv.DeviceId - @agv.DeviceName
+    <div id="status" style="width:30px;height:30px;display:inline-block;background:url(/images/machine.png);background-size:cover;"></div>
+</h3>
+
+<EditForm Model="@currentContext">
+    @*<p>
+        <span>移动位置</span>
+        <InputSelect @bind-Value=@currentContext.Pos>
+            <option value="2">充电桩</option>
+            <option value="11">钻机0001</option>
+            <option value="12">钻机0002</option>
+            <option value="15">暂存台</option>
+        </InputSelect>
+        <button @onclick="Move">
+            移动
+        </button>
+    </p>
+    <p>
+        <label>钻机上料Panel数量</label>
+        <InputNumber @bind-Value=@currentContext.LoadPanelCount></InputNumber>
+        <button @onclick="LoadMaterial">
+            上料
+        </button>
+    </p>
+    <p>
+        <label>钻机下料Panel数量</label>
+        <InputNumber @bind-Value=@currentContext.UnloadPanelCount></InputNumber>
+        <button @onclick="UnloadMaterial">
+            下料
+        </button>
+    </p>*@
+    <hr />
+    <p>
+    <p @ref="lblHandleRequestMaterial">@currentContext.RequestMessage</p>
+    </p>
+    <hr />
+    <p>
+        <button @onclick="QueryExternalMaterial">
+            查询料仓信息
+        </button>
+
+        <button @onclick="ClearExternalMaterial">
+            清空料仓
+        </button>
+    </p>
+    <p>
+        <table>
+            <tr>
+                <td><label>请输入物料代码</label></td>
+                <td>
+                    <InputText @bind-Value=@currentContext.ItemCode></InputText>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>装载到AGV的生料Panel数量</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.RawPanelCount></InputNumber>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>板料宽度</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PanelWidth></InputNumber>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>板料销钉偏移量</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PinOffset></InputNumber>
+                </td>
+            </tr>
+
+        </table>
+
+        <button @onclick="LoadExternalMaterial">
+            加载料仓信息
+        </button>
+    </p>
+    <p>当前信息</p>
+    <p @ref="messageElement">@currentContext.Message</p>
+</EditForm>
+
+@code {
+    private ElementReference messageElement;
+    private ElementReference lblHandleRequestMaterial;
+
+    private Timer timer;
+    private VgAutoDrill.JinLu.Mock.MockAGV? agv;
+    private CentralWebOptions centralWebOptions;
+
+    public class PostionAndDevice
+    {
+        public string Pos { get; set; }
+        public string Device { get; set; }
+        public string DeviceId { get; set; }
+        public string ProductId { get; set; }
+        public string ClientId { get; set; }
+    }
+
+    public class CurrentContext
+    {
+        public string Pos { get; set; } = "2";
+
+        public string ItemCode { get; set; } = "item01";
+
+        public string RequestMessage { get; set; } = "";
+
+        public string Message { get; set; } = "";
+
+        public List<PostionAndDevice> positionAndDevices { get; set; } = new List<PostionAndDevice>();
+
+        /// <summary>
+        /// 装载到AGV的生料Panel数量
+        /// </summary>
+        public int RawPanelCount { get; set; } = 6;
+        public int LoadPanelCount { get; set; } = 6;
+        public int UnloadPanelCount { get; set; } = 6;
+        public float PanelWidth { get; set; } = 620;
+        public float PinOffset { get; set; } = 0;
+
+        public PostionAndDevice GetTargetDevice()
+        {
+            return positionAndDevices.FirstOrDefault(a => a.Pos == Pos);
+        }
+    }
+
+    private CurrentContext currentContext = new CurrentContext
+    {
+        positionAndDevices = new List<PostionAndDevice>
+        {
+            new PostionAndDevice{ Pos="2", Device="充电桩"},
+            new PostionAndDevice{ Pos="11", Device="钻机0001",DeviceId="drill001",ProductId="drill"},
+            new PostionAndDevice{ Pos="12", Device="钻机0002",DeviceId="drill002",ProductId="drill"},
+            new PostionAndDevice{ Pos="15", Device="暂存台"},
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        agv = deviceProvider.GetDevice("MockAGV02jinlu") as VgAutoDrill.JinLu.Mock.MockAGV;
+        centralWebOptions = options.Value;
+
+        //timer = new System.Threading.Timer(_ =>
+        //    {
+        //        InvokeAsync(QueryExternalMaterial);
+        //        InvokeAsync(StateHasChanged);
+        //    }, null, 500, 1000);
+
+        //agv.OnShutDown += () => { timer.Dispose(); };
+
+
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        //messageConsumer.RequestMaterialEvent +=
+        //(request) =>
+        //{
+        //    //HandleRequestMaterial($"呼叫AGV请求：{request.DeviceId}-{request.EventId}");
+        //    HandleRequestMaterial(request);
+        //};
+
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void Show(bool res)
+    {
+        if (res)
+        {
+            this.JSRuntime.InvokeVoidAsync("success");
+        }
+        else
+        {
+            this.JSRuntime.InvokeVoidAsync("fail");
+        }
+    }
+
+    private static int handleRequestMaterial_Count = 0;
+
+    public struct RequestAction
+    {
+        public string DeviceId { get; set; }
+        public int Count { get; set; }
+        public string Message { get; set; }
+    }
+
+    private static Dictionary<string, string> RequestActions = new Dictionary<string, string>();
+    private static List<RequestAction> RequestAgvActions = new List<RequestAction>();
+    private async void HandleRequestMaterial(DeviceEventReportRequest request)
+    {
+        if (RequestAgvActions.Any(x => x.DeviceId == request.DeviceId))
+        {
+            var action = RequestAgvActions.First(x => x.DeviceId == request.DeviceId);
+            action.Count += 1;
+        }
+        else
+        {
+            RequestAgvActions.Add(new RequestAction
+                {
+                    DeviceId = request.DeviceId,
+                    Count = 10,
+                    Message = $"呼叫AGV:{request.DeviceId}-{request.EventId}--{DateTime.Now.ToLocalTime()}",
+
+                });
+        }
+
+        var messages = RequestAgvActions.OrderByDescending(x => x.Count).Take(10).Select(x => x.Message).ToArray();
+        currentContext.RequestMessage = string.Join(Environment.NewLine, messages);
+
+        await this.JSRuntime.InvokeVoidAsync("handleRequestMaterial", lblHandleRequestMaterial, currentContext.RequestMessage);
+    }
+
+    private async void ResetRequestMaterial()
+    {
+        RequestAgvActions.Clear();
+        currentContext.RequestMessage = "";
+
+        await this.JSRuntime.InvokeVoidAsync("handleRequestMaterial", lblHandleRequestMaterial, currentContext.RequestMessage);
+    }
+
+    private async void OutputMessage(string message, bool reset = false)
+    {
+        if (reset) currentContext.Message = $"{message}--{DateTime.Now.ToLocalTime()}";
+        else currentContext.Message = $"{currentContext.Message}{Environment.NewLine}{message}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("handleRequestMaterial", messageElement, currentContext.Message);
+    }
+
+    private async void Move()
+    {
+        var agvRequest = new DeviceServiceInvokeRequest
+            {
+                ProductId = agv.ProductId,
+                DeviceId = agv.DeviceId,
+                ClientId = agv.ClientId,
+                ServiceId = Topics.Services.AGV_MOVE_SERVICE_ID,
+                //TargetProductId = drill.ProductId,
+                //TargetDeviceId = drill.DeviceId,
+                //TargetClientId = drill.ClientId,
+                //CallerRequestInteractionBehavior = InteractionBehavior.UnloadMaterialOnly,
+                //CallerRequestInputProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_1,
+                //CallerRequestOutputProductStatus = ProductStatus.EmptySiloBox,
+                Params = new Dictionary<string, object?>
+    {
+    { "OperationList",new List<SwapPanel>
+        ()
+        {
+        new SwapPanel()
+        {
+        AgvPosition = currentContext.Pos.PadLeft(5, '0')
+        }
+        }
+        }
+        }
+            };
+
+        var response = await agv.Move(agvRequest);
+        OutputMessage($"移动到{currentContext.GetTargetDevice().Device}");
+
+        Show(response.Code == ErrorCodes.Sys.SUCCESS);
+    }
+
+    private async void LoadMaterial()
+    {
+        if (!agv.PayloadPanels.Any(p => p != null && p.DrillState == PanelDrillState.Undrilled))
+        {
+            OutputMessage($"Error,AGV当前没有生料{Environment.NewLine}{JsonSerializer.Serialize(agv.PayloadPanels)}", true);
+            Show(false);
+            return;
+        }
+
+        var targetDevice = currentContext.GetTargetDevice();
+
+        var agvRequest = new DeviceServiceInvokeRequest
+            {
+                ProductId = agv.ProductId,
+                DeviceId = agv.DeviceId,
+                ClientId = agv.ClientId,
+                ServiceId = Topics.Services.AGV_MOVE_SERVICE_ID,
+                TargetProductId = agv.ProductId,
+                TargetDeviceId = agv.DeviceId,
+                TargetClientId = agv.ClientId,
+                CallerRequestInteractionBehavior = InteractionBehavior.LoadPanelOnly,
+                //CallerRequestInputProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_1,
+                CallerRequestOutputProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+                Params = new Dictionary<string, object?>
+            {
+            {
+            "OperationList",new List<SwapPanel>
+                ()
+                {
+                new SwapPanel()
+                {
+                AgvPosition = currentContext.Pos.PadLeft(5, '0'),
+                SpindleId=1,
+                }
+                }
+                },
+                {
+                "LoadPanelCount",currentContext.LoadPanelCount
+                }
+                }
+            };
+
+        OutputMessage($"开始上料，target device:{targetDevice.DeviceId}", true);
+
+        OutputMessage($"{Environment.NewLine}开始--PrepareLoadMaterial");
+        var pre = await agv.PrepareLoadMaterial(agvRequest);
+        if (pre.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+        OutputMessage($"{Environment.NewLine}完成--PrepareLoadMaterial");
+
+        OutputMessage($"{Environment.NewLine}开始--InvokeLoadMaterial");
+        var invoke = await agv.InvokeLoadMaterial(agvRequest);
+        if (invoke.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+        OutputMessage($"{Environment.NewLine}完成--InvokeLoadMaterial");
+
+        OutputMessage($"{Environment.NewLine}开始--CompleteLoadMaterial");
+        var com = await agv.CompleteLoadMaterial(agvRequest);
+        if (com.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+
+        OutputMessage($"{Environment.NewLine}完成--CompleteLoadMaterial{Environment.NewLine}{JsonSerializer.Serialize(agv.PayloadPanels)}");
+
+        Show(true);
+    }
+
+    private async void UnloadMaterial()
+    {
+        if (agv.PayloadPanels.All(p => p != null))
+        {
+            OutputMessage($"Error,AGV当前没有空位，不能下料{Environment.NewLine}{JsonSerializer.Serialize(agv.PayloadPanels)}");
+        }
+
+        var agvRequest = new DeviceServiceInvokeRequest
+            {
+                ProductId = agv.ProductId,
+                DeviceId = agv.DeviceId,
+                ClientId = agv.ClientId,
+                ServiceId = Topics.Services.AGV_MOVE_SERVICE_ID,
+                TargetProductId = agv.ProductId,
+                TargetDeviceId = agv.DeviceId,
+                TargetClientId = agv.ClientId,
+                CallerRequestInteractionBehavior = InteractionBehavior.UnloadPanelOnly,
+                CallerRequestInputProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_1,
+                //CallerRequestOutputProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+                Params = new Dictionary<string, object?>
+                    {
+                    { "OperationList",new List<SwapPanel>
+                        ()
+                        {
+                        new SwapPanel()
+                        {
+                        AgvPosition = currentContext.Pos.PadLeft(5, '0'),
+                        SpindleId=1,
+                        }
+                        }
+                        },
+                        {
+                        "UnloadPanelCount",currentContext.UnloadPanelCount
+                        }
+                        }
+            };
+
+        OutputMessage($"开始下料操作", true);
+
+        var pre = await agv.PrepareUnloadMaterial(agvRequest);
+        if (pre.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+        var invoke = await agv.InvokeUnloadMaterial(agvRequest);
+        if (invoke.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+        var com = await agv.CompleteUnloadMaterial(agvRequest);
+        if (com.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            Show(false);
+            return;
+        }
+
+        OutputMessage($"下料操作已完成{Environment.NewLine}{JsonSerializer.Serialize(agv.PayloadPanels)}");
+
+        Show(true);
+    }
+
+    private async void LoadExternalMaterial()
+    {
+        if (string.IsNullOrEmpty(currentContext.ItemCode))
+        {
+            OutputMessage("请输入物料代码", true);
+            return;
+        }
+
+        agv.PayloadPanels = Enumerable.Repeat<Panel?>
+            (null, agv.DeviceDescriptor.SpindleNum * agv.DeviceDescriptor.LayerLimit).ToList();
+
+        var panelCodes = await httpRequestInvoker.GetFromJsonAsync<List<string>>(string.Format(centralWebOptions.GetNextPanelNumber, currentContext.RawPanelCount));
+
+        for (var i = 0;
+                i < currentContext.RawPanelCount && panelCodes != null && panelCodes.Count == currentContext.RawPanelCount;
+                i++)
+        {
+            agv.PayloadPanels[i] = new Panel
+                {
+                    PanelCode = panelCodes[i],//$"202310000000{i + 1}",
+                    ItemNo = currentContext.ItemCode,
+                    PanelWidth = currentContext.PanelWidth,
+                    PinOffset = currentContext.PinOffset,
+                    //物料装入第二台后的状态
+                    ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+                    DrillState = PanelDrillState.Unknown,
+                    SiloCode = $"Silo01",
+                    Layer = i,
+                    Position = 1,//单个料仓 AGV，1
+                    BatchId = "",
+                    LotId = "",
+                };
+        }
+
+        var response = await agv.ReportStatus();
+        if (response.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            OutputMessage("连接服务器失败,请检查网络", true);
+            Show(false);
+        }
+        else
+        {
+            OutputMessage($"板料装载完成{Environment.NewLine}{JsonSerializer.Serialize(agv.PayloadPanels)}", true);
+            this.ResetRequestMaterial();
+            Show(true);
+        }
+    }
+
+    private void QueryExternalMaterial()
+    {
+        OutputMessage(JsonSerializer.Serialize(agv.PayloadPanels), true);
+        Show(true);
+    }
+
+    private async void ClearExternalMaterial()
+    {
+        agv.PayloadPanels = Enumerable.Repeat<Panel?>
+            (null, agv.DeviceDescriptor.SpindleNum * agv.DeviceDescriptor.LayerLimit).ToList();
+
+        var response = await agv.ReportStatus();
+        if (response.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            OutputMessage("连接服务器失败,请检查网络", true);
+        }
+        else
+        {
+            OutputMessage(JsonSerializer.Serialize(agv.PayloadPanels), true);
+            Show(true);
+        }
+    }
+}

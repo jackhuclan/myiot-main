@@ -1,0 +1,130 @@
+[
+    {
+        "Id": 1,
+        "Title": "Dashboard",
+        "Icon": "mdi-professional-hexagon",
+        "Children": [
+            {
+                "Id": 2,
+                "Title": "Kanban",
+                "Icon": "mdi-circle",
+                "Href": "dashboard/drill"
+            },
+            {
+                "Id": 19,
+                "Title": "DrlKanban",
+                "Icon": "mdi-circle",
+                "Href": "dashboard/drilldrl"
+            },
+            {
+                "Id": 20,
+                "Title": "RutKanban",
+                "Icon": "mdi-circle",
+                "Href": "dashboard/drillrut"
+            },
+            {
+                "Id": 3,
+                "Title": "Detail",
+                "Icon": "mdi-circle",
+                "Href": "dashboard/detail",
+                "Target": "Self"
+            }
+        ]
+    },
+    {
+        "Id": 4,
+        "Title": "Utilization",
+        "Icon": "mdi-trending-up",
+        "Children": [
+            {
+                "Id": 5,
+                "Title": "GeneralDuty",
+                "Icon": "mdi-circle",
+                "Href": "duty/dutylist"
+            },
+            {
+                "Id": 6,
+                "Title": "RealTimeDuty",
+                "Icon": "mdi-circle",
+                "Href": "duty/realtimedutylist"
+            },
+            {
+                "Id": 7,
+                "Title": "ShiftDuty",
+                "Icon": "mdi-circle",
+                "Href": "duty/shiftdutylist"
+            },
+            {
+                "Id": 18,
+                "Title": "ShiftFinalDuty",
+                "Icon": "mdi-circle",
+                "Href": "duty/shiftfinaldutylist"
+            },
+            {
+                "Id": 8,
+                "Title": "AnalysisDuty",
+                "Icon": "mdi-circle",
+                "Href": "duty/analysisdutylist"
+            }
+        ]
+    },
+    {
+        "Id": 9,
+        "Title": "Working",
+        "Icon": "mdi-city",
+        "Href": "workingcondition/workingconditionlist",
+        "Target": "Self"
+    },
+    {
+        "Id": 10,
+        "Title": "COMM",
+        "Icon": "mdi-calendar-check-outline",
+        "Href": "comm/commlist",
+        "Target": "Self"
+    },
+    {
+        "Id": 11,
+        "Title": "Brokens",
+        "Icon": "mdi-file-outline",
+        "Children": [
+            {
+                "Id": 12,
+                "Title": "Broken",
+                "Icon": "mdi-circle",
+                "Href": "broken/brokenlist"
+            },
+            {
+                "Id": 13,
+                "Title": "BrokenEnd",
+                "Icon": "mdi-circle",
+                "Href": "broken/brokenendlist"
+            }
+        ]
+    },
+    {
+        "Id": 14,
+        "Title": "Alarm",
+        "Icon": "mdi-account-outline",
+        "Href": "alarm/alarmlist",
+        "Target": "Self"
+    },
+    {
+        "Id": 15,
+        "Title": "Events",
+        "Icon": "mdi-file-outline",
+        "Children": [
+            {
+                "Id": 16,
+                "Title": "Event",
+                "Icon": "mdi-circle",
+                "Href": "event/eventlist"
+            },
+            {
+                "Id": 17,
+                "Title": "M52Event",
+                "Icon": "mdi-circle",
+                "Href": "event/m54list"
+            }
+        ]
+    }
+]

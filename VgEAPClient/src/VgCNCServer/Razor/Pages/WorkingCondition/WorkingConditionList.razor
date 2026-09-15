@@ -1,0 +1,85 @@
+﻿@page "/workingcondition/workingconditionlist"
+@inherits ProComponentBase
+@inject NavigationManager Nav
+
+<MRow Class="align-items-center">
+    <MCol Sm=12 Md=2>
+        <button class="select-device-button" @onclick="ShowDeviceList">
+            <i class="fas fa-wrench"></i> 设备选择
+        </button>
+    </MCol>
+    <MCol Sm=12 Md=10>
+        @if (!string.IsNullOrEmpty(queryResult))
+        {
+            <div style="margin-top: 10px;">
+                <p>@queryResult</p>
+            </div>
+        }
+    </MCol>
+</MRow>
+
+@if (showModal)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <span class="close" @onclick="CloseModal">&times;</span>
+            <div class="device-list">
+                @foreach (var equipment in allEquipmentIDs)
+                {
+                    <div class="device-item">
+                        <input type="checkbox" class="checkbox-large" @bind="@selectedEquipmentIDs[equipment]" /> @equipment
+                    </div>
+                }
+            </div>
+            <div class="button-container">
+                <button class="confirm-button" @onclick="ConfirmSelection">确定</button>
+            </div>
+        </div>
+    </div>
+}
+
+<MCard>
+    <MCardText Class="mt-3">
+        <MRow Class="mt-3">
+            <MCol Sm=12 Md=2>
+                <MTextField @bind-Value=EquipmentID Label="机台号" Outlined Clearable></MTextField>
+            </MCol>
+            <MCol Sm=12 Md=2>
+                <MTextField @bind-Value=ActProgram Label="文件名" Outlined Clearable></MTextField>
+            </MCol>
+            <MCol Sm=12 Md=2>
+                <MMenu CloseOnContentClick="false" @bind-Value="_startDateMenu" NudgeRight="40" Transition="scale-transition" OffsetY MinWidth="@("auto")">
+                    <ActivatorContent Context="menuContext">
+                        <MTextField Readonly @bind-Value=StartDate Label="开始日期" Outlined Placeholder="Start Date" @attributes="menuContext.Attrs"></MTextField>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MDatePicker Class="task-datepicker" @bind-Value=StartDate OnInput="()=>_startDateMenu=false"></MDatePicker>
+                    </ChildContent>
+                </MMenu>
+           </MCol>
+            <MCol Sm=12 Md=2>
+                <MMenu CloseOnContentClick="false" @bind-Value="_endDateMenu" NudgeRight="40" Transition="scale-transition" OffsetY MinWidth="@("auto")">
+                    <ActivatorContent Context="menuContext">
+                        <MTextField Readonly @bind-Value=EndDate Label="截止日期" Outlined Placeholder="End Date" @attributes="menuContext.Attrs"></MTextField>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MDatePicker Class="task-datepicker" @bind-Value=EndDate OnInput="()=>_endDateMenu=false"></MDatePicker>
+                    </ChildContent>
+                </MMenu>
+            </MCol>
+            <MCol Sm=12 Md=4>
+                <MButton Color="primary" MinWidth=150 Height=55 Class="rounded-pill" @onclick="async ()=> await QueryDetail()"> 查询 </MButton>
+                <MButton Color="primary" MinWidth=150 Height=55 Class="rounded-pill" @onclick="async ()=> await ExportExcel()"> 导出 </MButton>
+            </MCol>
+        </MRow>
+    </MCardText>
+</MCard>
+
+<MCard Class="mt-3">
+    <MDataTable Headers="dataTableHeaders" Items="itemSource" ItemsPerPage="10" Class="elevation-1"></MDataTable>
+</MCard>
+
+@code {
+    bool _startDateMenu;
+    bool _endDateMenu;  
+}

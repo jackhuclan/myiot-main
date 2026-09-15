@@ -1,0 +1,6 @@
+{
+	"MaxHttpCollectionKeys":"1000",
+	"Logging:Console:LogLevel['Microsoft.Hosting.Lifetime']":"INfoeee",
+   "CentralWebOptions:DeviceConfig"	:"SINGLE22",
+   "Logging:Console:LogLevel['VgAutoDrill.Fundation.Iot.Jobs.KeepingDeviceConnectionJob']":"myKeepingDeviceConnectionJob",
+}

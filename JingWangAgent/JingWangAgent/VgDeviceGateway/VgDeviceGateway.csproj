@@ -1,0 +1,226 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <NoWarn>1701;1702;8765;1591;8618;8600;8601;8602;8603;8981;8604;8625</NoWarn>
+    <DefineConstants>Buffer_Only</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>$(Version)</Version>
+    <Company>$(Company)</Company>
+    <Copyright>$(Copyright)</Copyright>
+    <WebPage>$(WebPage)</WebPage>
+    <Authors>$(Authors)</Authors>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591;8618</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;1591;8618</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Controllers\STD\StdAgvDeviceHolder.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="Components\FrontDrillPage.razor" />
+    <Content Remove="Components\FrontDrillPage01.razor" />
+    <Content Remove="Components\LiftingProcessedStagingDesk.razor" />
+    <Content Remove="Components\RearDrill2849D10Page.razor" />
+    <Content Remove="conf\appsetting.TransferLocation.json" />
+    <Content Remove="conf\appsettings-BackPanel.Development.json" />
+    <Content Remove="conf\appsettings.Agv.json" />
+    <Content Remove="conf\appsettings.cnc84Drill.json" />
+    <Content Remove="conf\appsettings.cnc95Drill.json" />
+    <Content Remove="conf\appsettings.HKAGV.json" />
+    <Content Remove="conf\appsettings.PanelFork.json" />
+    <Content Remove="conf\appsettings.PanelShelf.json" />
+    <Content Remove="conf\appsettings.Pin.json" />
+    <Content Remove="conf\appsettings.Std.PanelShelf.json" />
+    <Content Remove="conf\appsettings.StdAgv-localhost.json" />
+    <Content Remove="conf\appsettings.StdAgv.json" />
+    <Content Remove="conf\appsettings.UnPin.json" />
+    <Content Remove="conf\appsettings.XianJinIotAgv.json" />
+    <Content Remove="conf\appsettings2.Development.json" />
+    <Content Remove="conf\CNC95Drill\appsettings.kinwong.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="data\3225.atp" />
+    <None Remove="logs\readme.txt" />
+    <None Remove="RunAgent.bat" />
+    <None Remove="runOnConsole.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="data\3225.atp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="logs\readme.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="RunAgent.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="runOnConsole.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="conf\appsetting.TransferLocation.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.Std.PanelShelf.json" />
+    <None Include="conf\appsettings.XianJinIotAgv.json" />
+    <None Include="conf\appsettings.cnc95Drill.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings-BackPanel.Development.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.Agv.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.cnc84Drill.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.HKAGV.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.PanelFork.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.PanelShelf.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.Pin.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.StdAgv-localhost.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.StdAgv.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\appsettings.UnPin.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="conf\CNC95Drill\appsettings.kinwong.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="wwwroot\css\font\iconfont.js" />
+    <None Include="wwwroot\lib\jquery\jquery.js" />
+    <None Include="wwwroot\lib\jquery\jquery.min.js" />
+    <None Include="wwwroot\lib\jquery\jquery.min.map" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageReference Include="NModbus" Version="3.0.81" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.2.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SimpleClient\VgDeviceGateway.Mock.csproj" />
+    <ProjectReference Include="..\VegaIot.External.Bomin\VegaIot.External.Bomin.csproj" />
+    <ProjectReference Include="..\VegaIot.External.Hik\VegaIot.External.Hik.csproj" />
+    <ProjectReference Include="..\VegaIot.External.Kinwong\VegaIot.External.Kinwong.csproj" />
+    <ProjectReference Include="..\VegaIot.External.Std.AGV\VegaIot.External.Std.Shelf.csproj" />
+    <ProjectReference Include="..\VegaIot.External.Xianjin\VegaIot.External.Xianjin.csproj" />
+    <ProjectReference Include="..\Vegalot.External.LeweiPin\Vegalot.External.LeweiPin.csproj" />
+    <ProjectReference Include="..\Vegalot.External.LeweiUnPin\Vegalot.External.LeweiUnPin.csproj" />
+    <ProjectReference Include="..\Vegalot.External.XianjinIot.Drill\Vegalot.External.XianjinIot.Drill.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Common\VgDeviceGateway.Devices.Common.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Agv\VgDeviceGateway.Devices.Agv.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Drill\VgDeviceGateway.Devices.Drill.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Fork\VgDeviceGateway.Devices.Fork.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Pin\VgDeviceGateway.Devices.Pin.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.Shelf\VgDeviceGateway.Devices.Shelf.csproj" />
+    <ProjectReference Include="..\VgDeviceGateway.Devices.UnPin\VgDeviceGateway.Devices.UnPin.csproj" />
+    <ProjectReference Include="..\VgDeviceMonitor\VgDeviceMonitor.csproj" />
+	<ProjectReference Include="..\Vegalot.External.XianjinIot.Agv\Vegalot.External.XianjinIot.Agv.csproj" />
+	<ProjectReference Include="..\Vegalot.External.XianjinIot.Common\Vegalot.External.XianjinIot.Common.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Components\StdAGVPage.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="conf\appsettings.SimpleDevice.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="conf\CNC95Drill\appsettings.Production.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="conf\appsettings.Development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="conf\appsettings.Production.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Data\Arrange1.Json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Data\Arrange2.Json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Data\Arrange3.Json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\closeSpline.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\images\openspline.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Data\3225.dia">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\3225.drl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\old-1.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\old-2.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\old-3.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\vega-1.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\vega-2.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\vega-3.ATP">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="停止代理服务（管理员权限）.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="启动代理服务（管理员权限）.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="安装代理服务（管理员权限）.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

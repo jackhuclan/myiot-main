@@ -1,0 +1,42 @@
+﻿@page "/"
+@using VgAutoDrill.Fundation.Iot
+@inject IConfiguration configuration
+@inject IDeviceProvider deviceProvider
+<PageTitle>@Title</PageTitle>
+
+<DynamicComponent Type="@componentType" />
+
+@code {
+    private Type componentType;
+    private string Title = "Auto Drill 调度系统";
+    private Dictionary<string, Type> renderComponents = new Dictionary<string, Type>()
+    {
+      {"DefaultAGVPage",typeof(Components.DefaultAGVPage) },
+      {"StdAGVPage",typeof(Components.StdAGVPage) },      
+      // {"RearDrill2849D10Page",typeof(Components.RearDrill2849D10Page) },
+      {"SiloShelfPage",typeof(Components.SiloShelfPage) },
+      //{"FrontDrillPage",typeof(Components.FrontDrillPage) },
+      {"DrillPage",typeof(Components.DrillPage) },
+      {"DrillToolPage",typeof(Components.DrillToolPage) },
+      {"DrillPageNoBuffer",typeof(Components.DrillPageNoBuffer) },
+       {"PinPage",typeof(Components.PinPage) },
+       {"UnPinPage",typeof(Components.UnPinPage) },
+       {"PanelForkPage",typeof(Components.PanelFork) },
+       {"TransferLocationPage",typeof(Components.TransferLocationPage) },
+       {"Bomin/PinPage",typeof(Components.Bomin.PinPage) },
+       {"Bomin/UnPinPage",typeof(Components.Bomin.UnPinPage) },
+       {"XianJinIotAgvPage",typeof(Components.XianJinIotAgvPage) },
+       {"SiloShelfStdPage",typeof(Components.SiloShelfStdPage) },
+       {"SimpleDevicePage",typeof(Components.SimpleDevicePage) }
+    };
+
+    protected override void OnInitialized()
+    {
+        string? deviceType = configuration.GetValue<string>("PageController");
+        renderComponents.TryGetValue(deviceType, out componentType);
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        var device = deviceProvider.GetDevice(deviceId) as Device;
+        var version = device == null ? "" : "v"+device.DeviceDescriptor.AgentVersion.ToString();
+        Title = $"中控调度代理-{version}-{componentType.Name}";
+    }
+}

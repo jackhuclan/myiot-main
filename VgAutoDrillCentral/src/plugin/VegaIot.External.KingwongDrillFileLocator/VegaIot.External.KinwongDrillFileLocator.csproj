@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.kinwong.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.kinwong.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="VgAutoDrill.Fundation" Version="3.7.30.1140" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\VgAutoDrill.Central\VgAutoDrill.Central.csproj" />
+  </ItemGroup>
+
+</Project>

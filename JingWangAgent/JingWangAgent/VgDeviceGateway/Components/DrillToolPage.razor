@@ -1,0 +1,1039 @@
+﻿@using VgAutoDrill.OpenAPI
+@using VgDeviceGateway.Devices.Common;
+@using VgAutoDrill.Fundation.Iot;
+@using System.Text.Json;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgDeviceGateway.Devices.Drill;
+@using VgDeviceGateway.Devices;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Utils;
+@using System.Threading;
+@inject ILogger<DefaultDrill> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IConfiguration configuration
+
+<h3>RearDrill2849Page---<span id="deviceId"></span></h3>
+<h3>呼叫条件显示---<span id="callcondition"></span></h3>
+<h3>呼叫函数返回信息---<span id="callResult"></span></h3>
+<h5>呼叫函数小于时间信息---<span id="callTimeResult"></span></h5>
+<h5>buffer整个上下料是否结束---<span id="endResult"></span></h5>
+
+<text>钻机呼叫事件信息：</text>
+<br />
+<h4 id="transtext">@TransactionId</h4>
+<table style="border:solid 2px;">
+    <tr style="border:solid 2px;">
+        <th style="border:solid 2px;"> transId类型 </th>
+        <th style="border:solid 2px;"> transId 值 </th>
+    </tr>
+    <tr style="border:solid 1px;">
+        <td style="border:solid 1px;">生料transId</td>
+        <td style="border:solid 1px;" id="newtranstext">@NewTranscationId</td>
+    </tr>
+    <tr style="border:solid 1px;">
+        <td style="border:solid 1px;">钻机transId</td>
+        <td style="border:solid 1px;" id="drilltranstext">@DrillTransactionId</td>
+    </tr>
+    <tr style="border:solid 1px;">
+        <td style="border:solid 1px;">熟料transId</td>
+        <td style="border:solid 1px;" id="oldtranstext">@OldTransactionId</td>
+    </tr>
+</table>
+
+<br />
+<p>
+    <EditForm Model="@rearDrill2849Context">
+
+        <InputSelect @bind-Value=@rearDrill2849Context.splineNum>
+            @for (var i = 0; i < rearDrill2849Temp?.spindleNum; i++)
+            {
+                <option value="@(i+1)">@(i + 1)号轴</option>
+            }
+        </InputSelect>&nbsp;&nbsp;
+        <InputSelect @bind-Value=@rearDrill2849Context.RegionNum>
+            <option value="1">1号区域</option>
+            <option value="2">2号区域</option>
+            <option value="3">3号区域</option>
+        </InputSelect>
+    </EditForm>
+</p>
+
+<p id="text">@message</p>
+
+<p>
+    <button @onclick="PrepareLoadMaterial">
+        上料前准备
+    </button>
+    <button @onclick="InvokeLoadMaterial">
+        上料
+    </button>
+    <button @onclick="CompleteLoadMaterial">
+        上料完成
+    </button>
+
+    <button @onclick="CompleteAllLoadMaterial">
+        上料全部完成
+    </button>
+    <br />
+    <br />
+    <button @onclick="PrepareUnloadMaterial">
+        下料前准备
+    </button>
+    <button @onclick="InvokeUnloadMaterial">
+        下料
+    </button>
+    <button @onclick="CompleteUnloadMaterial">
+        下料完成
+    </button>
+    <button @onclick="CompleteAllUnloadMaterial">
+        下料全部完成
+    </button>
+
+
+    <button @onclick="PropertiesRead" hidden>
+        读属性
+    </button>
+    <br />
+    <br />
+
+
+    <button @onclick="ReadPanels">
+        查看料仓信息
+    </button>
+
+    <button @onclick="ReadProperties">
+        查看属性信息
+    </button>
+
+    <button @onclick="BufferUnLoadAndLoadEndFlag" hidden>
+        Buffer给钻机上料完成
+    </button>
+
+    <button @onclick="DrillFinish" hidden>
+        钻机打板结束
+    </button>
+    <br />
+    <br />
+    <button @onclick="CompleteAllEnd">
+        Agv给Buffer上下料全部完成
+    </button>
+<p id="mode">@mess</p>
+<br />
+<br />
+
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 1)
+    {
+        <text>轴1使用:</text>
+    <input id="broken1" type="checkbox" @onclick="ChangeSpline1BrokenStatus" @bind="spline1checked" style="margin: 10px" />
+    <br />
+    }
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 2)
+    {
+        <text>轴2使用:</text>
+    <input id="broken2" type="checkbox" @onclick="ChangeSpline2BrokenStatus" @bind="spline2checked" style="margin: 10px" />
+    <br />
+    }
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 3)
+    {
+        <text>轴3使用:</text>
+    <input id="broken3" type="checkbox" @onclick="ChangeSpline3BrokenStatus" @bind="spline3checked" style="margin: 10px" />
+    <br />
+    }
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 4)
+    {
+        <text>轴4使用:</text>
+    <input id="broken4" type="checkbox" @onclick="ChangeSpline4BrokenStatus" @bind="spline4checked" style="margin :10px" />
+    <br />
+    }
+
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 5)
+    {
+        <text>	轴5使用:</text>
+    <input id="broken5" type="checkbox" @onclick="ChangeSpline5BrokenStatus" @bind="spline5checked" style="margin :10px" />
+    <br />
+    }
+    @if (rearDrill2849Temp.DeviceDescriptor.SpindleNum.ToInt() >= 6)
+    {
+        <text>	轴6使用:</text>
+    <input id="broken6" type="checkbox" @onclick="ChangeSpline6BrokenStatus" @bind="spline6checked" style="margin :10px" />
+    <br />
+    }
+
+<br />
+
+<br />
+
+
+<button @onclick="ResetCallAgv">
+    重置呼叫AGV信号
+</button>
+
+<p id="mode">@message</p>
+</p>
+<br />
+<br />
+
+@code {
+    DefaultDrill rearDrill2849Temp;
+    protected override void OnInitialized()
+    {
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        rearDrill2849Temp = deviceProvider.GetDevice(deviceId) as DefaultDrill;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        mess = !mess;
+        try
+        {
+            var rearDrill2849 = deviceProvider.Devices[0] as DefaultDrill;
+            rearDrill2849Temp = rearDrill2849;
+            SetTransIdMessage("transtext", rearDrill2849?.TransactionId);
+            SetTransIdMessage("deviceId", rearDrill2849?.DeviceId);
+            SetTransIdMessage("newtranstext", rearDrill2849?.NewTranscationId);
+            SetTransIdMessage("drilltranstext", rearDrill2849?.DrillTransactionId);
+            SetTransIdMessage("oldtranstext", rearDrill2849?.OldTransactionId);
+            SetTransIdMessage("callcondition", rearDrill2849?.CallCondition);
+            SetTransIdMessage("callResult", rearDrill2849?.callResult);
+            SetTransIdMessage("callTimeResult", rearDrill2849?.callTimeResult);
+            SetTransIdMessage("endResult", rearDrill2849?.bufferAllUnloadAndLoadEnd == 1 ? "结束" : "未结束 ");
+            var lenth = rearDrill2849?.spindleNum;
+            var charArray = rearDrill2849?.SplineNoBrokenStatus.ToCharArray();
+
+            if (lenth >= 1) SetCheckIdMessage("broken1", charArray[0] == '1');
+            if (lenth >= 2) SetCheckIdMessage("broken2", charArray[1] == '1');
+            if (lenth >= 3) SetCheckIdMessage("broken3", charArray[2] == '1');
+            if (lenth >= 4) SetCheckIdMessage("broken4", charArray[3] == '1');
+            if (lenth >= 5) SetCheckIdMessage("broken5", charArray[4] == '1');
+            if (lenth >= 6) SetCheckIdMessage("broken6", charArray[5] == '1');
+
+
+            //this.JSRuntime.InvokeVoidAsync("Refresh");
+
+        }
+        catch (Exception e)
+        {
+
+            logger.LogDebug($"网页异常 OnAfterRender  {e.Message}");
+        }
+        #region task
+        //Task.Run(async() =>
+        //{
+        //	while (true)
+        //	{
+        //		try
+        //		{
+        //			if (deviceProvider.Devices.Count == 1)
+        //			{
+        //				try
+        //				{
+        //					var rearDrill2849 = deviceProvider.Devices[0] as DefaultDrill;
+        //					SetTransIdMessage("transtext", rearDrill2849?.TransactionId);
+        //					SetTransIdMessage("newtranstext", rearDrill2849?.NewTranscationId);
+        //					SetTransIdMessage("drilltranstext", rearDrill2849?.DrillTransactionId);
+        //					SetTransIdMessage("oldtranstext", rearDrill2849?.OldTransactionId);
+        //				}
+        //				catch (Exception e)
+        //				{
+
+        //					logger.LogDebug($"网页异常 OnAfterRender  {e.Message}");
+        //				}
+        //			}
+
+        //			await InvokeAsync(StateHasChanged);
+        //		}
+        //		catch (Exception e)
+        //		{
+        //			logger.LogDebug($"网页异常 OnAfterRender run  {e.Message}");
+
+        //		}
+        //		Thread.Sleep(10 * 1000);
+
+        //	}
+
+
+        //});
+        #endregion
+        #region timer
+        //var timer = new Timer(async _ =>
+        //{
+        //	try
+        //	{
+        //		if (deviceProvider.Devices.Count == 1)
+        //		{
+        //			try
+        //			{
+        //				var rearDrill2849 = deviceProvider.Devices[0] as DefaultDrill;
+        //				SetTransIdMessage("transtext", rearDrill2849?.TransactionId);
+        //				SetTransIdMessage("newtranstext", rearDrill2849?.NewTranscationId);
+        //				SetTransIdMessage("drilltranstext", rearDrill2849?.DrillTransactionId);
+        //				SetTransIdMessage("oldtranstext", rearDrill2849?.OldTransactionId);
+        //				//TransactionId = rearDrill2849?.TransactionId;
+        //				//NewTranscationId = rearDrill2849?.NewTranscationId;
+        //				//DrillTransactionId = rearDrill2849?.DrillTransactionId;
+        //				//OldTransactionId = rearDrill2849?.OldTransactionId;
+        //			}
+        //			catch (Exception e)
+        //			{
+        //				logger.LogDebug($"网页异常 Timer run  {e.Message}");
+        //			}
+        //		}
+
+        //		await InvokeAsync(StateHasChanged);
+        //	}
+        //	catch (Exception e)
+        //	{
+        //		logger.LogDebug($"网页异常 Timer   {e.Message}");
+
+        //	}
+
+        //}, null, 10000, 10000);
+        #endregion
+
+
+    }
+
+    public bool spline1checked { get; set; } = false;
+    public bool spline2checked { get; set; } = false;
+    public bool spline3checked { get; set; } = false;
+    public bool spline4checked { get; set; } = false;
+    public bool spline5checked { get; set; } = false;
+    public bool spline6checked { get; set; } = false;
+    public bool mess { get; set; } = false;
+
+    public class RearDrill2849Context
+    {
+        public int splineNum { get; set; } = 1;
+        public int RegionNum { get; set; } = 1;
+        public string codeMessage { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
+        public float PanelWidth { get; set; } = 622f;
+        public float PinOffset { get; set; } = 3.2f;
+
+    }
+    private RearDrill2849Context rearDrill2849Context = new RearDrill2849Context();
+
+    string message = "";
+    string Buffer_Automatic = "";
+    public string TransactionId = "";
+    public string NewTranscationId = "";
+    public string DrillTransactionId = "";
+    public string OldTransactionId = "";
+
+
+    private void OutputMessage(string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("SetText", message);
+    }
+
+
+    private void SetTransIdMessage(string id, string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("UpdateInf", id, message);
+    }
+    private void SetCheckIdMessage(string id, bool check)
+    {
+        this.JSRuntime.InvokeVoidAsync("CheckInf", id, check);
+    }
+
+    private void OutputModeMessage(string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("UpdateInf", "mode", message);
+    }
+    private async void PrepareLoadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 PrepareLoadMaterial...");
+        OutputMessage($"PrepareLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.PrepareLoadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                    {
+                        { "Position",rearDrill2849Context.splineNum},
+                        { "Region",rearDrill2849Context.RegionNum},
+                        { "IsLastStep",false},
+                         { "LoadingTrays",
+                         new SwapTray()
+                         {
+                             TrayList = new List<CutterTray>()
+                            {
+                                 new  CutterTray
+                                {
+                                    ItemCode ="1111" ,
+                                    TrayCode = "",
+                                    Status = CutterTrayStatus.Old,
+                                    SiloCode = $"Silo01",                                
+                                }
+
+                            }
+                         }
+
+                     }
+
+                    }
+                });
+            OutputMessage($"PrepareLoadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+    //
+    private async void ChangeSpline1BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSplineBrokenStatus...");
+        OutputMessage($"ChangeSplineBrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[0] = spline1checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline1BrokenStatus 函数 开始执行 结束  {spline1checked}{device.SplineNoBrokenStatus}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline2BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSpline2BrokenStatus...");
+        OutputMessage($"ChangeSpline2BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[1] = spline2checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline2BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline3BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSpline3BrokenStatus...");
+        OutputMessage($"ChangeSpline3BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[2] = spline3checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline3BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline4BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSpline4BrokenStatus...");
+        OutputMessage($"ChangeSpline4BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[3] = spline4checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline4BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline5BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSpline5BrokenStatus...");
+        OutputMessage($"ChangeSpline5BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[4] = spline5checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline5BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+    //
+    private async void ChangeSpline6BrokenStatus()
+    {
+        logger.LogDebug("RearDrill2849 ChangeSpline6BrokenStatus...");
+        OutputMessage($"ChangeSpline6BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[5] = spline6checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline6BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void InvokeLoadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 InvokeLoadMaterial...");
+        OutputMessage($"InvokeLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.InvokeLoadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.INVOKE_LOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                    {
+                        { "Position",rearDrill2849Context.splineNum},
+                        { "Region",rearDrill2849Context.RegionNum},
+                        { "IsLastStep",false}
+                    }
+                });
+
+            OutputMessage($"InvokeLoadMaterial 函数执行结果:【{response.Code}】   {response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void CompleteLoadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 CompleteLoadMaterial...");
+        OutputMessage($"CompleteLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                {
+                     { "Position",rearDrill2849Context.splineNum},
+                     { "Region",rearDrill2849Context.RegionNum},
+                     { "IsLastStep",false},
+                      { "LoadingTray",
+                         new SwapTray()
+                         {
+                             TrayList = new List<CutterTray>()
+                            {
+                                 new  CutterTray
+                                {
+                                    ItemCode ="mockItemCode" ,
+                                    TrayCode = "mockTrayCode",
+                                    Status = CutterTrayStatus.Old,
+                                    SiloCode = $"TrayCodeSiloCode",
+                                }
+                            }
+                         }
+
+                     }
+                }
+                });
+            OutputMessage($"CompleteLoadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void CompleteAllLoadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 CompleteAllLoadMaterial...");
+        OutputMessage($"CompleteAllLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+
+            var response = await device.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                {
+                     { "Position",rearDrill2849Context.splineNum},
+                     { "Region",rearDrill2849Context.RegionNum},
+                     { "IsLastStep",true},
+                     {"LoadingPanel",new SwapPanel()
+                        {
+                          PanelList=new List<Panel>()
+                             {
+                                 new Panel()
+                                 {
+                                     BatchCode="p1",
+                                     ItemCode="item01",
+                                     PanelCode="123456"
+                                 }
+                             }
+                        }
+                     },
+                }
+                });
+            OutputMessage($"CompleteAllLoadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void PrepareUnloadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 PrepareUnloadMaterial...");
+        OutputMessage($"PrepareUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.PrepareUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                    {
+                        { "Position",rearDrill2849Context.splineNum},
+                        { "Region",rearDrill2849Context.RegionNum},
+                        { "IsLastStep",false}
+                    }
+                });
+            OutputMessage($"PrepareUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void InvokeUnloadMaterial()
+    {
+        OutputMessage($"InvokeUnloadMaterial 函数 开始执行");
+        logger.LogDebug("RearDrill2849 InvokeUnloadMaterial...");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.InvokeUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.INVOKE_UNLOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                {
+                     { "Position",rearDrill2849Context.splineNum},
+                     { "Region",rearDrill2849Context.RegionNum},
+                     { "IsLastStep",false}
+                }
+                });
+            OutputMessage($"InvokeUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void CompleteUnloadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 CompleteUnloadMaterial...");
+        OutputMessage($"CompleteUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_UNLOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                {
+                     { "Position",rearDrill2849Context.splineNum},
+                     { "Region",rearDrill2849Context.RegionNum},
+                     { "IsLastStep",false},
+                }
+                });
+            OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}  {string.Join(' ',response.Params.Values)}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void CompleteAllUnloadMaterial()
+    {
+        logger.LogDebug("RearDrill2849 CompleteAllUnloadMaterial...");
+        OutputMessage($"CompleteAllUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = await device.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_UNLOAD_MATERIAL_SERVICE_ID,
+                    CallerRequestInteractionDirection = InteractionPosition.Front,
+                    CallerRequestMaterialKind = MaterialKind.Cutter,
+                    Params = new Dictionary<string, object?>
+                {
+                     {"Position",rearDrill2849Context.splineNum},
+                     { "Region",rearDrill2849Context.RegionNum},
+                     {"IsLastStep",true},
+                }
+                });
+            OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void PropertiesRead()
+    {
+        logger.LogDebug("RearDrill2849 PropertiesRead...");
+        OutputMessage($"PropertiesRead 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.ReadProperties(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PROPERTIES_READ_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                {
+                   { "Buffer_Automatic","" }
+                }
+                });
+            OutputMessage($"PropertiesRead 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ResetCallAgv()
+    {
+        logger.LogDebug("RearDrill2849 ResetCallAgv...");
+        OutputMessage($"ResetCallAgv 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0];
+            var response = await device.CompleteSchedule(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                });
+            OutputMessage($"ResetCallAgv 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ReadPanels()
+    {
+        logger.LogDebug("RearDrill2849 ReadPanels...");
+        OutputMessage($"ReadPanels 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;//("FrontDrill1001");
+            try
+            {
+                OutputMessage($"ReadPanels 函数执行结果: {Environment.NewLine}{JsonSerializer.Serialize(device.PayloadPanels)}");
+
+            }
+            catch (Exception ee)
+            {
+                OutputMessage($"ModifyPanles 函数执行异常:【{ee.Message}】");
+            }
+
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ReadProperties()
+    {
+        logger.LogDebug("RearDrill2849 ReadPanels...");
+        OutputMessage($"ReadPanels 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;//("FrontDrill1001");
+            try
+            {
+                OutputMessage($"ReadProperties 函数执行结果: {Environment.NewLine}{JsonSerializer.Serialize(device.WatchingProperties.GetValues())}");
+
+            }
+            catch (Exception ee)
+            {
+                OutputMessage($"ReadProperties 函数执行异常:【{ee.Message}】");
+            }
+
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void BufferUnLoadAndLoadEndFlag()
+    {
+        logger.LogDebug("RearDrill2849 CallAgv...");
+        OutputMessage($"BufferUnLoadAndLoadEndFlag 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.WriteProperties(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+                        {"Buffer_UnLoadAndLoadEndFlag",false },
+
+                    }
+                });
+
+            if (response.Code == ErrorCodes.Sys.SUCCESS)
+            {
+                response = await device.WriteProperties(new DeviceServiceInvokeRequest
+                    {
+                        ProductId = device.ProductId,
+                        DeviceId = device.DeviceId,
+                        ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                        Params = new Dictionary<string, object?>
+                        {
+                            {"Buffer_UnLoadAndLoadEndFlag",true },
+                        }
+                    });
+            }
+
+
+            OutputMessage($"BufferUnLoadAndLoadEndFlag 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void DrillFinish()
+    {
+        logger.LogDebug("DrillFinish CallAgv...");
+        OutputMessage($"DrillFinish 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.WriteProperties(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+                        {"Drill_DrillHoleEnd",false },
+                    }
+                });
+
+            if (response.Code == ErrorCodes.Sys.SUCCESS)
+            {
+                response = await device.WriteProperties(new DeviceServiceInvokeRequest
+                    {
+                        ProductId = device.ProductId,
+                        DeviceId = device.DeviceId,
+                        ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                        Params = new Dictionary<string, object?>
+                        {
+                            {"Drill_DrillHoleEnd",true },
+
+                        }
+                    });
+            }
+
+
+            OutputMessage($"DrillFinish 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void Work()
+    {
+        logger.LogDebug("RearDrill2849 work...");
+        OutputMessage($"Work 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0];
+            var response = await device.Work(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.WORK_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+
+                    }
+                });
+
+            OutputMessage($"Work 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void Standby()
+    {
+        logger.LogDebug("RearDrill2849 Standby...");
+        OutputMessage($"Standby 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.Standby(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.STANDBY_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+
+                    }
+                });
+
+            OutputMessage($"Standby 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void Shutdown()
+    {
+        logger.LogDebug("RearDrill2849 Shutdown...");
+        OutputMessage($"Shutdown 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.Shutdown(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.SHUTDOWN_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+
+                    }
+                });
+            OutputMessage($"Shutdown 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ScheduleTask()
+    {
+        logger.LogDebug("RearDrill2849 ScheduleTask...");
+        OutputMessage($"ScheduleTask 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.ScheduleTask(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.SCHEDULE_TASK_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+
+                    }
+                });
+            OutputMessage($"ScheduleTask 函数执行结果:【{response.Code}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void CompleteAllEnd()
+    {
+        logger.LogDebug("CompleteAllEnd PrepareLoadMaterial...");
+        OutputMessage($"CompleteAllEnd 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as DefaultDrill;
+            var response = device.CompleteAllEnd();
+            OutputMessage($"PrepareLoadMaterial 函数执行结果:【{response}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+}
+

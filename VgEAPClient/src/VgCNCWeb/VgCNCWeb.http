@@ -1,0 +1,6 @@
+@VgCNCWeb_HostAddress = http://localhost:5051
+
+GET {{VgCNCWeb_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

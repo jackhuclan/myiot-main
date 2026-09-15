@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>$(Version)</Version>
+    <Company>$(Company)</Company>
+    <Copyright>$(Copyright)</Copyright>
+    <WebPage>$(WebPage)</WebPage>
+    <Authors>$(Authors)</Authors>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591;1998;8629;1573</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;1591;1998;8629;1573</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="ClickHouseDemo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="NLog.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ClickHouse.Client" Version="7.8.2" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.2.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VgAutoDrill.DataCollect.Application\VgAutoDrill.DataCollect.Application.csproj" />
+  </ItemGroup>
+</Project>

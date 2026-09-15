@@ -1,0 +1,838 @@
+﻿@using System.Text.Json;
+@using System.ComponentModel;
+@using Microsoft.Extensions.Options;
+@using System.Text.Encodings.Web
+@using System.Text.Unicode
+@using VgAutoDrill.OpenAPI
+@using VgDeviceGateway.Devices.Common;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Iot.Configuration;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@using VgDeviceGateway.Devices;
+@using VgDeviceGateway.Devices.Common;
+@using Vegalot.External.LeweiPin;
+@inject ILogger<Pin> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IOptions<CentralWebOptions> options;
+@inject IConfiguration configuration
+<h3>博敏Pin</h3>
+<h3>
+    @siloShelf.DeviceId - @siloShelf.DeviceName
+    <div id="status" style="width:30px;height:30px;display:inline-block;background:url(/images/machine.png);background-size:cover;"></div>
+</h3>
+
+<text>料架呼叫事件信息：</text>
+<br />
+@* <h2 id="transtext"> @siloShelf.TransIds</h2> *@
+<h2> <p @ref="transtextElement" id="transtext"></p> </h2>
+<br />
+<button @onclick="ResetCallAgv">
+    重置呼叫AGV信号
+</button>
+
+<button @onclick="ResetAgvIsNotOnWorkSilo">
+    设置AGV取消给料架上料信号
+</button>
+<EditForm Model="@currentContext">
+    <br />
+    <p>
+        选择工位
+        <Select @onchange="ChageRack" value="@currentContext.RackIndex" style="width:200px;">
+            @for (var i = 0; i < siloShelf.DeviceDescriptor.SpindleNum.ToInt(); i++)
+            {
+                <option value="@i">@(i + 1)</option>
+            }
+        </Select>
+        <button @onclick="QueryExternalMaterial">
+            查询料架板材信息
+        </button>
+
+        <button @onclick="QueryProperties">
+            查看属性信息
+        </button>
+        <button @onclick="QueryAllExternalMaterial">
+            查询所有料架板材信息
+        </button>
+    </p>
+    <br />
+    <p>
+
+        <button @onclick="PrepareLoadMaterial">
+            准备上料
+        </button>
+        <button @onclick="CompleteLoadMaterial">
+            上料完成
+        </button>
+        <br />
+        <br />
+        <button @onclick="PrepareUnloadMaterial">
+            准备下料
+        </button>
+        <button @onclick="CompleteUnloadMaterial">
+            下料完成
+        </button>
+    </p>
+    <br />
+
+    <p>
+        <label>PLC 操作类型：</label>
+        <InputSelect @bind-Value=@currentContext.PlcHandleType>
+            <option value="0">Readsingle</option>
+            <option value="1">Readholding</option>
+            <option value="3">Writesingle</option>
+            <option value="4">Writecoils</option>
+            <option value="5">WriteMutil</option>
+        </InputSelect>
+        <label>起始地址:</label>
+        <InputText @bind-Value=@currentContext.PlcAddr></InputText>
+        <label>数量:</label>
+        <InputText @bind-Value=@currentContext.PlcLength></InputText>
+        <label>写入值:</label>
+        <InputText @bind-Value=@currentContext.PlcValue></InputText>
+        <button @onclick="ReadPlc">
+            读取
+        </button>
+
+        <button @onclick="ReadCoilPlc">读取线圈 </button>
+
+        <button @onclick="WritePlc">
+            写入
+        </button>
+
+    </p>
+    <br />
+
+    <p>
+        <table>
+            <tr>
+                <td><label>是否存在料仓</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.IsExistSilo>
+                        <option value="false">不存在</option>
+                        <option value="true">存在</option>
+                    </InputSelect>
+                </td>
+            </tr>
+            @if (currentContext.IsExistSilo)
+            {
+                <tr>
+                    <td><label>料仓序号</label></td>
+                    <td>
+                        <InputSelect @bind-Value="currentContext.LocationCode" style="width:100%;">
+                            @foreach (var siloCode in siloShelf.SiloCodes)
+                            {
+                                <option value="@siloCode">@siloCode </option>
+                            }
+                            @*@for (var i = 0; i < siloShelf.DeviceDescriptor.Extra["ShelfNames"].ToString().Split(','); i++)
+                        {
+                        <option value="@i">@(i + 1)</option>
+                        }*@
+                        </InputSelect>
+                    </td>
+                    <td style="padding-left:10px" align="right">
+                        <label>料仓匹配:</label>
+                    </td>
+                    <td><InputText @bind-Value="currentContext.SiloMatch" style="width:100%;"></InputText></td>
+                    <td>
+                        &nbsp;
+                        <button @onclick="ReloadSiloCodes">
+                            更新料仓编号
+                        </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td><label>请输入起始层</label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.StartLayer>
+                            @for (var i = 0; i < siloShelf.DeviceDescriptor.LayerLimit.ToInt(); i++)
+                            {
+                                <option value="@i">@(i + 1) 层</option>
+                            }
+                        </InputSelect>
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td><label>板料类型</label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.PanelType>
+                            <option value="0">空</option>
+                            @*       <option value="1">生料</option>
+                        <option value="2">熟料</option> *@
+                            <option value="3">已上Pin</option>
+                            @*         <option value="4">待下pin</option> *@
+                        </InputSelect>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>请输入物料代码</label></td>
+                    <td>
+                        <InputSelect @bind-Value="currentContext.ItemCode" style="width:100%;">
+                            @if (siloShelf.MaterialModels != null)
+                            {
+                                @foreach (var rh in siloShelf.MaterialModels)
+                                {
+                                    <option value="@rh.Code">@rh.Code</option>
+                                }
+                            }
+                        </InputSelect>
+                    </td>
+                    <td align="center"><label>排序: </label></td>
+                    <td>
+                        <InputSelect @bind-Value=@currentContext.ItemOrder>
+                            <option value="2" selected>按创建时间倒序</option>
+                            <option value="3">按物料代码正序</option>
+                            <option value="4">按物料代码倒序</option>
+                        </InputSelect>
+                    </td>
+                    <td style="padding-left:10px" align="right"><label>模糊匹配: </label></td>
+                    <td> <InputText @bind-Value=@currentContext.MaterialMatchCode></InputText></td>
+                    <td style="padding-left:5px">
+                        <button @onclick="ReloadMaterialCodes">
+                            刷新物料
+                        </button>
+
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>装载到料架的Panel数量</label>
+                    </td>
+                    <td>
+                        <InputNumber @bind-Value=@currentContext.RawPanelCount></InputNumber>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>板料宽度</label>
+                    </td>
+                    <td>
+                        <InputNumber @bind-Value=@currentContext.PanelWidth></InputNumber>
+                    </td>
+                    <td>
+                        <p>请输入低于625的值</p>
+                    </td>
+                </tr>
+            }
+
+        </table>
+        @if (currentContext.IsExistSilo)
+        {
+            @if (!currentContext.isReady)
+            {
+                <button @onclick="LoadExternalMaterial">
+                    加载板料信息
+                </button>
+            }
+            else
+            {
+                <text> 先取消ready状态,再进行板材加载</text>
+            }
+
+        }
+        else
+        {
+            @if (!currentContext.isReady)
+            {
+                <button @onclick="EnsureNoSilo">
+                    确认无料仓
+                </button>
+            }
+            else
+            {
+                <text> 先取消ready状态,再进行确认无料仓</text>
+            }
+
+        }
+
+        <br />
+        <br />
+    <p>
+
+        <button @onclick="SearchStatus">
+            查询Ready状态
+        </button>
+
+        <button @onclick="SetReady">
+            设置Ready状态
+        </button>
+
+        <button @onclick="SetNoReady">
+            取消Ready状态
+        </button>
+
+    </p>
+    <br />
+    <p>
+        <button @onclick="SetUploadSilo">
+            设置  Pin机可上料状态
+        </button>
+        <button @onclick="SetNotUploadSilo">
+            取消 Pin机可上料状态
+        </button>
+        <button @onclick="SetDownloadSilo">
+            设置  Pin机可下料状态
+        </button>
+        <button @onclick="SetNotDownloadSilo">
+            取消 Pin机可下料状态
+        </button>
+    </p>
+    </p>
+    <br />
+    <p>
+        选择AGV:
+        <InputSelect @bind-Value="@currentContext.AGVCode" style="width:200px;">
+            <option value="">--请选择AGV--</option>
+            @foreach (var i in siloShelf.DeviceDescriptor.Extra["AGVCodes"].ToString().Split(','))
+            {
+                <option value="@i.ToStr().Trim()">@i </option>
+            }
+        </InputSelect>
+
+        <button @onclick="CallAgv">
+            主叫 AGV(直接发起,测试用)
+        </button>
+    </p>
+    <p>当前信息</p>
+    <p @ref="messageElement">@currentContext.Message</p>
+</EditForm>
+
+@code {
+    private ElementReference messageElement;
+    private ElementReference transtextElement;
+    private CentralWebOptions centralWebOptions;
+    private List<MaterialModel> _rhModel = new List<MaterialModel> { new MaterialModel { Code = "" } };
+    private List<string> SiloCodes { get; set; } = new List<string>() { "" };
+    private string TransactionId = "";
+
+    void UpdateValue(IHandleEvent? receiver, MulticastDelegate? de)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+    private async void ReloadMaterialCodes()
+    {
+        //  _rhModel.Clear();
+        await siloShelf.GetPanelItemCodeAsync((QueryOrderByEnum)currentContext.ItemOrder, currentContext.MaterialMatchCode);
+        // _rhModel.AddRange(siloShelf.MaterialModels);
+        OutputMessage($"获取物料代码成功，当前排序方式：{((QueryOrderByEnum)currentContext.ItemOrder).ToString()}", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+
+    }
+
+    Pin? siloShelf;
+    CurrentContext currentContext;
+    JsonSerializerOptions Jsonoptions;
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        centralWebOptions = options.Value;
+        // _rhModel = siloShelf.MaterialModels;
+        // OutputMessageTranc(siloShelf.TransIds);
+    }
+
+    private void ChageRack(ChangeEventArgs e)
+    {
+        siloShelf.ShelfIndex = (e.Value.ToInt() + 1).ToString();
+        currentContext = siloShelf.WatchShelfProperty[siloShelf.ShelfIndex].CurrentContext;
+        currentContext.RackIndex = e.Value.ToInt();
+    }
+
+    protected override void OnInitialized()
+    {
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        siloShelf = deviceProvider.GetDevice(deviceId) as Pin;
+        currentContext = siloShelf.WatchShelfProperty[siloShelf.ShelfIndex]?.CurrentContext;
+        currentContext.RawPanelCount = siloShelf.DeviceDescriptor.LayerLimit.ToInt();
+
+        Jsonoptions = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true
+        };
+
+        var timer = new Timer(_ =>
+        {
+            OutputMessageTranc(siloShelf.TransIds);
+        }, null, 300, 1000 * 2);
+    }
+
+    private void Show(bool res)
+    {
+        if (res)
+        {
+            this.JSRuntime.InvokeVoidAsync("success");
+        }
+        else
+        {
+            this.JSRuntime.InvokeVoidAsync("fail");
+        }
+    }
+
+    private async void OutputMessage(string message, bool reset = false)
+    {
+        message = $"{message}{Environment.NewLine}--{DateTime.Now.ToLocalTime()}";
+        await this.JSRuntime.InvokeVoidAsync("setElementText1", messageElement, message);
+    }
+
+    private async void OutputMessageHTML(string message, bool reset = false)
+    {
+        message = $"{message}{Environment.NewLine}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("setElementHTML1", messageElement, message);
+    }
+
+    private void OutputMessageTranc(string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("setElementText1", transtextElement, message);
+    }
+
+    private async void PrepareLoadMaterial()
+    {
+        var response = await siloShelf.PrepareLoadMaterial(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+            Params = new Dictionary<string, object?>
+                    {
+                        { "SiloPosition",currentContext.RackIndex+1},//
+                        { "ShelfIndex",currentContext.ShelfIndex+1},
+
+                    }
+        });
+
+        OutputMessage($"PrepareLoadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+    }
+
+    private async Task ReloadSiloCodes()
+    {
+        if (SiloCodes == null)
+            SiloCodes = new List<string>();
+        else
+            SiloCodes.Clear();
+        SiloCodes.Add("");
+
+        var siloCodes = await siloShelf.GetSiloCodeAsync(currentContext.SiloMatch);
+        SiloCodes.AddRange(siloCodes);
+        siloShelf.SiloCodes = SiloCodes;
+        OutputMessage("更新料仓编码成功", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+
+    private async void CompleteLoadMaterial()
+    {
+        List<Panel> panels = new List<Panel>();
+        for (int i = 0; i < siloShelf.DeviceDescriptor.LayerLimit.ToInt(); i++)
+        {
+            panels.Add(new Panel()
+            {
+                BatchCode = "p1",
+                ItemCode = "item01",
+                PanelCode = "123456",
+                Position = currentContext.RackIndex + 1,
+                Layer = i,
+
+            });
+        }
+
+        var response = await siloShelf.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+            Params = new Dictionary<string, object?>
+                {
+                    { "SiloPosition",currentContext.RackIndex+1},
+                    { "LoadingPanel",JsonSerializer.Serialize(new SwapPanel()
+                        {
+                          PanelList=panels
+                        })
+                     },
+                    { "ShelfIndex",currentContext.RackIndex+1}
+                },
+            CallerRequestInputProductStatus = ProductStatus.PRE_POST_BUFFER_TRANSFER_AGV_OUTPUT_1
+        });
+        OutputMessage($"CompleteLoadMaterial 函数执行结果:【{response.Code}】\r\n{response.Message}", true);
+        Show(true);
+    }
+
+    private async void PrepareUnloadMaterial()
+    {
+        var response = await siloShelf.PrepareUnloadMaterial(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+            Params = new Dictionary<string, object?>
+                    {
+                        { "SiloPosition",currentContext.RackIndex+1},
+
+                    }
+        });
+        OutputMessage($"PrepareUnloadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+
+    }
+    private async void CompleteUnloadMaterial()
+    {
+
+        var response = await siloShelf.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+            Params = new Dictionary<string, object?>
+                {
+                    { "SiloPosition",currentContext.RackIndex+1},
+                    { "ShelfIndex",currentContext.RackIndex+1}
+                },
+        });
+        OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】 \r\n{response.Message}", true);
+        Show(true);
+    }
+
+    private async void ReadPlc()
+    {
+
+        var response = await siloShelf.ReadPlc(currentContext);
+        OutputMessage($"ReadPlc 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+        Show(true);
+    }
+
+    private void ReadCoilPlc()
+    {
+        var response = siloShelf.ReadCoilPlc(currentContext);
+        OutputMessage($"ReadCoilPlc 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+        Show(true);
+    }
+
+    private async void WritePlc()
+    {
+        var response = await siloShelf.WritePlc(currentContext);
+        OutputMessage($"WritePlc 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+        Show(true);
+    }
+
+    private async void EnsureNoSilo()
+    {
+        List<Panel> panels = Panel.NoSilo.PanelForSingleSpindle(currentContext.RackIndex + 1, 0, siloShelf.DeviceDescriptor.LayerLimit);
+        siloShelf.UpdateSiloInfoByPositionAndIndex(currentContext.RackIndex + 1, 0, panels);
+        QueryExternalMaterial();
+    }
+
+    private async void ResetAgvIsNotOnWorkSilo()
+    {
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].IsAgvWorking = false;
+        OutputMessage($"ResetAgvIsNotOnWorkSilo 函数执行结果:【设置agv是否在给料架上料 false 】", true);
+    }
+    private async void ResetCallAgv()
+    {
+        var response = await siloShelf.CompleteSchedule(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            EventId = $"event#{currentContext.RackIndex + 1}",
+            ScheduledStatus = VgAutoDrill.Fundation.Iot.Schedule.ScheduledTaskStatus.Canceled
+        });
+        OutputMessage($"ResetCallAgv 函数执行结果:【{response.Code}】", true);
+    }
+
+    private async void LoadExternalMaterial()
+    {
+        currentContext.SiloCode = currentContext.LocationCode;
+        if (string.IsNullOrEmpty(currentContext.SiloCode))
+        {
+            OutputMessage("请选择料仓", true);
+            return;
+        }
+
+        if (currentContext.PanelType != 0 && string.IsNullOrEmpty(currentContext.ItemCode))
+        {
+            OutputMessage("请输入物料代码", true);
+            return;
+        }
+
+        if (currentContext.StartLayer + currentContext.RawPanelCount > siloShelf.DeviceDescriptor.LayerLimit.ToInt())
+        {
+            OutputMessage($"层数+加载数量不能大于{siloShelf.DeviceDescriptor.LayerLimit.ToInt()}层", true);
+            return;
+        }
+
+
+        var currentPanels = siloShelf.PayloadPanels.Where(p => p.Position == currentContext.RackIndex + 1).ToList();
+        currentPanels.ForEach(p => p.SiloCode = currentContext.SiloCode);
+
+        //找到这个料仓 将不是emptyPayLoad 修改为EmptySiloBox
+        siloShelf.UpdatePanelStatusFromEmptyPayloadToEmptySiloBox(currentContext.RackIndex + 1);
+
+        var productStatus = currentContext.PanelType switch
+        {
+            1 => ProductStatus.Finished_PRE_BUFFER,
+            2 => ProductStatus.PRE_POST_BUFFER_TRANSFER_AGV_OUTPUT_1,
+            3 => ProductStatus.Finished_PIN,
+            4 => ProductStatus.PRE_UNPIN_TRANSFER_AGV_OUTPUT_1,
+            _ => ProductStatus.EmptySiloBox
+        };
+
+        var layersToGenerate = Enumerable.Range(currentContext.StartLayer, currentContext.RawPanelCount)
+                            .Where(layer => string.IsNullOrEmpty(currentPanels.FirstOrDefault(p => p.Layer == layer)?.PanelCode) == true)
+                            .ToList();
+
+        List<Panel>? response = null;
+        if (layersToGenerate.Any() && currentContext.PanelType != 0)
+        {
+            var request = new GetNextPanelRequest
+            {
+                BeginLayer = layersToGenerate.First(),
+                Count = layersToGenerate.Count,
+                ItemCode = currentContext.ItemCode,
+                PinOffset = currentContext.PinOffset,
+                ProductStatus = productStatus,
+                SiloCode = "",
+                Position = 1,
+                BatchCode = "",
+                LotId = "",
+            };
+
+            response = await httpRequestInvoker.PostAsJsonAsync<GetNextPanelRequest, List<Panel>>(
+                siloShelf.DeviceDescriptor.Extra["GetNextPanelNumberV2"].ToStr(), request);
+
+            if (response?.Count < layersToGenerate.Count)
+            {
+                OutputMessage($"请重试。生成的数量【{response?.Count ?? 0}】与需要的数量【{layersToGenerate.Count}】不一致");
+                return;
+            }
+        }
+        QueryOrderByEnum queryOrder = QueryOrderByEnum.OrderByCreateTimeDesc;
+        var condition = new GetItemListReq { QueryOrderBy = queryOrder, Code = currentContext.ItemCode };
+        var MaterialModel = await httpRequestInvoker.PostAsJsonAsync<GetItemListReq, List<MaterialPanelInfo>>(siloShelf.CentralWebOptions.GetItemCode.ToStr(), condition);
+
+        var panels = new PanelList();
+        var responseIndex = 0;
+        for (var i = 0; i < currentContext.RawPanelCount; i++)
+        {
+            var currentLayer = currentContext.StartLayer + i;
+            var existingPanel = currentPanels.FirstOrDefault(p => p.Layer == currentLayer);
+
+            if (currentContext.PanelType == 0)
+            {
+                panels.Add(new Panel
+                {
+                    PanelCode = "",
+                    ItemCode = "",
+                    LocationCode = currentContext.LocationCode,
+                    SiloCode = currentContext.SiloCode,
+                    Layer = currentLayer,
+                    Position = currentContext.RackIndex + 1,
+                    BatchCode = "",
+                    LotId = "",
+                    PanelWidth = 0,
+                    PanelLength = 0,
+                    PinOffset = 0,
+                    ProductStatus = productStatus
+                });
+            }
+            else
+            {
+                var panel = new Panel();
+                panel.ItemCode = currentContext.ItemCode;
+                panel.LocationCode = currentContext.LocationCode;
+                panel.SiloCode = currentContext.SiloCode;
+                panel.Layer = currentLayer;
+                panel.Position = currentContext.RackIndex + 1;
+                panel.BatchCode = "";
+                panel.LotId = "";
+                panel.PinOffset = 0;
+                panel.ProductStatus = productStatus;
+                panel.PanelLength = MaterialModel?.FirstOrDefault()?.panelLength ?? 0f;
+                panel.PanelWidth = MaterialModel?.FirstOrDefault()?.panelWidth ?? 0f;
+
+                if (!string.IsNullOrEmpty(existingPanel?.PanelCode))
+                {
+                    panel.PanelCode = existingPanel.PanelCode;
+                    panel.Pcs = existingPanel.Pcs;
+                    panel.Barcode = existingPanel.Barcode;
+                }
+                else
+                {
+                    var newPanel = response?[responseIndex] ?? new Panel();
+                    var panelCode = newPanel.PanelCode ?? Guid.NewGuid().ToString();
+
+                    panel.PanelCode = panelCode;
+                    panel.Pcs = newPanel.Pcs;
+
+                }
+                panels.Add(panel);
+            }
+        }
+
+        siloShelf.UpdateSiloInfoByPositionAndIndex(currentContext.RackIndex + 1, currentContext.StartLayer, panels);
+        currentContext.PanelCode = "";
+        currentContext.Barcode = "";
+        QueryExternalMaterial();
+    }
+
+    private void QueryExternalMaterial()
+    {
+        var shelfIndex = currentContext.RackIndex + 1;
+        var allstr = $"第{shelfIndex}号料架</br>";
+        if (siloShelf?.PayloadPanels?.Count() > 0)
+        {
+            for (int i = currentContext.RackIndex * siloShelf.DeviceDescriptor.LayerLimit; i < currentContext.RackIndex * siloShelf.DeviceDescriptor.LayerLimit + siloShelf.DeviceDescriptor.LayerLimit; i++)
+            {
+                string status = VgDeviceGateway.Devices.Common.FormatPanelStatus.GetPanelOrSiloStatus(siloShelf.PayloadPanels[i].ProductStatus);
+
+                if (siloShelf.PayloadPanels.Any(t => t.ProductStatus != ProductStatus.EmptySiloBox || t.ProductStatus != ProductStatus.EmptyPayload)
+                    && siloShelf.PayloadPanels[i].ProductStatus == ProductStatus.EmptySiloBox) status = "空层";
+
+                if (siloShelf.PayloadPanels.All(t => t.ProductStatus == ProductStatus.EmptySiloBox)) status = "空料仓";
+
+                allstr += $"第{i + 1}层:"
+                    + $"【板料状态】:<span style='font-weight: bold;'>{status}</span>,"
+                    + $"【料仓号】:<span style='font-weight: bold;color:sandybrown'>{siloShelf.PayloadPanels[i].SiloCode ?? ""}</span>，"
+                    + $"【料号】:<span style='font-weight: bold;color:blue'>{siloShelf.PayloadPanels[i].ItemCode ?? ""}</span>，"
+                    + $"【板料码】:{siloShelf.PayloadPanels[i].PanelCode ?? ""},"
+                    + $"【板料二维码】:<span style='font-weight: bold;color:magenta'>{siloShelf.PayloadPanels[i].Barcode ?? ""}</span>,"
+                    + $"【板长】:{siloShelf.PayloadPanels[i].PanelLength}，"
+                    + $"【板宽】:{siloShelf.PayloadPanels[i].PanelWidth}，"
+                    + $"【板厚】:{siloShelf.PayloadPanels[i].PanelThickness}，"
+                    + $"【位置】:{siloShelf.PayloadPanels[i].LocationCode ?? ""}，"
+                    + $"【片数】：{(int)siloShelf.PayloadPanels[i].Pcs}</br>";
+
+                //allstr += $"第{i + 1 - siloShelf.layerLimit * currentContext.RackIndex}层：{Newtonsoft.Json.JsonConvert.SerializeObject(siloShelf?.PayloadPanels[i])} {Environment.NewLine}";
+            }
+        }
+
+        OutputMessageHTML(allstr, true);
+        Show(true);
+    }
+
+    private void QueryAllExternalMaterial()
+    {
+        string allstr = string.Empty;
+        for (int i = 0; i < siloShelf.spindleNum * siloShelf.DeviceDescriptor.LayerLimit; i++)
+        {
+            string status = VgDeviceGateway.Devices.Common.FormatPanelStatus.GetPanelOrSiloStatus(siloShelf.PayloadPanels[i].ProductStatus);
+
+            if (siloShelf.PayloadPanels.Any(t => t.ProductStatus != ProductStatus.EmptySiloBox || t.ProductStatus != ProductStatus.EmptyPayload)
+                 && siloShelf.PayloadPanels[i].ProductStatus == ProductStatus.EmptySiloBox) status = "空层";
+
+            if (siloShelf.PayloadPanels.All(t => t.ProductStatus == ProductStatus.EmptySiloBox)) status = "空料仓";
+
+            allstr += $"第{i + 1}层:"
+                + $"【板料状态】:{status},"
+                + $"【料仓号】:{siloShelf.PayloadPanels[i].SiloCode ?? ""}，"
+                + $"【料号】:{siloShelf.PayloadPanels[i].ItemCode ?? ""}，"
+                //+ $"【板料码】:{panels[i].PanelCode ?? ""},"
+                + $"【板料二维码】:{siloShelf.PayloadPanels[i].Barcode ?? ""},"
+                + $"【板长】:{siloShelf.PayloadPanels[i].PanelLength}，"
+                + $"【板宽】:{siloShelf.PayloadPanels[i].PanelWidth}，"
+                + $"【板厚】:{siloShelf.PayloadPanels[i].PanelThickness}，"
+                + $"【位置】:{siloShelf.PayloadPanels[i].LocationCode ?? ""}，"
+                + $"【片数】：{(int)siloShelf.PayloadPanels[i].Pcs}{Environment.NewLine}";
+
+            //allstr += $"第{i + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(siloShelf.PayloadPanels[i])} {Environment.NewLine}";
+        }
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private async Task QueryProperties()
+    {
+
+        var aaa = siloShelf.WatchingProperties.GetValues();
+        var allstr = "";
+        foreach (var item in aaa)
+        {
+            allstr += $"{item.Key}:{JsonSerializer.Serialize(item.Value, Jsonoptions).Replace("\r\n", "")} \r\n";
+        }
+        OutputMessage(allstr, true);
+        Show(true);
+
+    }
+
+    private async void SearchStatus()
+    {
+        var aaa = currentContext.isReady;
+        OutputMessage("是否是ready状态 ：" + aaa.ToString(), true);
+        Show(true);
+    }
+
+    private async void SetReady()
+    {
+        var response = await siloShelf.WriteProperties(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+            // Params = new Dictionary<string, object?>
+            // {
+            //         {"IsReady",true },
+
+            // }
+        });
+
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].IsReady = true;
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].CurrentContext.isReady = true;
+        OutputMessage(response.Message + $"是否Ready {currentContext.isReady}", true);
+        Show(true);
+    }
+
+    private async void SetNoReady()
+    {
+        var response = await siloShelf.WriteProperties(new DeviceServiceInvokeRequest
+        {
+            ProductId = siloShelf.ProductId,
+            DeviceId = siloShelf.DeviceId,
+            ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+        });
+
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].IsReady = false;
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].CurrentContext.isReady = false;
+        await siloShelf.CancelSchdule(currentContext.RackIndex + 1);
+        OutputMessage(response.Message + $"是否Ready {currentContext.isReady}", true);
+        Show(true);
+    }
+
+    private async void SetUploadSilo()
+    {
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].PinCallAgvUploadSilo = true;
+        OutputMessage($"是否可上料： 是", true);
+        Show(true);
+    }
+
+    private async void SetNotUploadSilo()
+    {
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].PinCallAgvUploadSilo = false;
+        OutputMessage($"是否可上料:  否", true);
+        Show(true);
+    }
+
+    private async void SetDownloadSilo()
+    {
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].PinCallAgvDownLoadSilo = true;
+        OutputMessage($"是否可下料： 是", true);
+        Show(true);
+    }
+    private async void SetNotDownloadSilo()
+    {
+        siloShelf.WatchShelfProperty[(currentContext.RackIndex + 1).ToStr()].PinCallAgvDownLoadSilo = false;
+        OutputMessage($"是否可下料： 否", true);
+        Show(true);
+    }
+    private async void CallAgv()
+    {
+        var message = await siloShelf.ForeCallAgv(currentContext.RackIndex + 1);
+        OutputMessage(message, true);
+    }
+}

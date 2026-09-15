@@ -1,0 +1,234 @@
+﻿@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@inject ILogger<MockDrill> logger
+@inject IDeviceProvider deviceProvider
+<h3>MockDriller</h3>
+<p>
+    <EditForm Model="@mockDrillContext">
+        <InputSelect @bind-Value=@mockDrillContext.splineNum>
+        <option value="1">1号轴</option>
+        <option value="2">2号轴</option>
+        <option value="3">3号轴</option>
+        <option value="4">4号轴</option>
+        <option value="5">5号轴</option>
+        <option value="6">6号轴</option>
+        </InputSelect>&nbsp;&nbsp;
+    </EditForm>
+<p>@message</p>
+</p>
+<p>
+    <button @onclick="PrepareLoadMaterial">
+        上料前准备
+    </button>
+    <button @onclick="InvokeLoadMaterial">
+        上料
+    </button>
+    <button @onclick="CompleteLoadMaterial">
+        上料完成
+    </button>
+    <br />
+    <br />
+    <button @onclick="PrepareUnloadMaterial">
+        下料前准备
+    </button>
+    <button @onclick="InvokeUnloadMaterial">
+        下料
+    </button>
+    <button @onclick="CompleteUnloadMaterial">
+        下料完成
+    </button>
+
+    <br />
+    <br />
+    <button @onclick="PropertiesRead">
+        读属性
+    </button>
+
+    <button @onclick="PropertiesWrite">
+        写属性
+    </button>
+</p>
+<br />
+@code {
+    public class MockDrillContext
+    {
+        public int splineNum { get; set; } = 1;
+    }
+    private MockDrillContext mockDrillContext = new MockDrillContext();
+   
+    string message = "";
+    string Buffer_Automatic = "";
+    private async void PrepareLoadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill PrepareLoadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.PrepareLoadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.PREPARE_LOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                  { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"PrepareLoadMaterial 函数执行结果:【{response.Code}】";
+    }
+    private async void PrepareUnloadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill PrepareUnloadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.PrepareUnloadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                    { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"PrepareUnloadMaterial 函数执行结果:【{response.Code}】";
+    }
+
+    private async void InvokeLoadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill InvokeLoadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.InvokeLoadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.INVOKE_LOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                    { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"InvokeLoadMaterial 函数执行结果:【{response.Code}】";
+    }
+
+
+    private async void InvokeUnloadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill InvokeUnloadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.InvokeUnloadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.INVOKE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                     { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"InvokeUnloadMaterial 函数执行结果:【{response.Code}】";
+    }
+    private async void CompleteLoadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill CompleteLoadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.CompleteLoadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                     { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"CompleteLoadMaterial 函数执行结果:【{response.Code}】";
+    }
+
+
+    private async void CompleteUnloadMaterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill CompleteUnloadMaterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.CompleteUnloadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.COMPLETE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                     { "Position",mockDrillContext.splineNum}
+                }
+            });
+        message = $"CompleteUnloadMaterial 函数执行结果:【{response.Code}】";
+    }
+
+    private async void PropertiesRead()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill PropertiesRead...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response= await device.ReadProperties(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_READ_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                   { "Buffer_Automatic","" }
+                }
+            });
+        message = $"PropertiesRead 函数执行结果:【{response.Code}】";
+    }
+
+
+    private async void PropertiesWrite()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill PropertiesWrite...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        var response = await device.WriteProperties(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                Params = new Dictionary<string, object?> { }
+            });
+        message = $"PropertiesWrite 函数执行结果:【{response.Code}】";
+    }
+
+
+
+    private async void LoadMeterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill LoadMeterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        await device.InvokeLoadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.INVOKE_LOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?> { }
+            });
+    }
+
+
+    private async void UnloadMeterial()
+    {
+        message = string.Empty;
+        logger.LogDebug("MockDrill UnloadMeterial...");
+        var device = deviceProvider.GetDevice("MockDrill01");
+        await device.InvokeUnloadMaterial(new Fundation.Iot.Models.DeviceServiceInvokeRequest
+            {
+                ProductId = device.ProductId,
+                DeviceId = device.DeviceId,
+                ServiceId = Topics.Services.INVOKE_UNLOAD_MATERIAL_SERVICE_ID,
+                Params = new Dictionary<string, object?> { }
+            });
+    }
+}

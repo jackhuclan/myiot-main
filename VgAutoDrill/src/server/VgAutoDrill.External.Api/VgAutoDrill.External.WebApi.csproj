@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>obj\VgAutoDrill.External.WebApi.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Controllers\HomeController.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="conf\appsettings.Development.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="conf\appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.0.0" />
+    <PackageReference Include="SqlSugar.IOC" Version="1.7.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VgAutoDrill.Admin.Common\VgAutoDrill.Admin.Common.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.Admin.Domain\VgAutoDrill.Admin.Domain.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.External.Application\VgAutoDrill.External.Application.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.External.Model\VgAutoDrill.External.Model.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.Infrastructure.Authentication\VgAutoDrill.Infrastructure.Authentication.csproj" />
+  </ItemGroup>
+</Project>

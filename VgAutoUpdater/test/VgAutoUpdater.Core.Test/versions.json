@@ -1,0 +1,68 @@
+{
+  "Mode": 0,
+  "Enable": true,
+  "AppList": [
+    {
+      "AppName": "test",
+      "ZipName": "v1.1.0.0.zip",
+      "ServiceName": "VgAutoUpdaterHub",
+      "AppVersion": "1.0.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+        ".\\uninstall.bat test VgAutoUpdaterHub v1.1.0.0"
+      ],
+      "PostScripts": [
+        ".\\install.bat test\\v1.1.0.0\\VgAutoUpdaterHub.exe VgAutoUpdaterHub 5258"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": false,
+      "Installed": false
+    },
+    {
+      "AppName": "test",
+      "ZipName": "v1.2.0.0.zip",
+      "ServiceName": "VgAutoUpdaterHub",
+      "AppVersion": "1.1.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+        ".\\uninstall.bat test VgAutoUpdaterHub v1.2.0.0"
+      ],
+      "PostScripts": [
+        ".\\install.bat test\\v1.2.0.0\\VgAutoUpdaterHub.exe VgAutoUpdaterHub 5258"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": false,
+      "Installed": false
+    },
+    {
+      "AppName": "test",
+      "ZipName": "v1.3.0.0.zip",
+      "ServiceName": "VgAutoUpdaterHub",
+      "AppVersion": "1.3.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+        ".\\uninstall.bat test VgAutoUpdaterHub v1.3.0.0"
+      ],
+      "PostScripts": [
+        ".\\install.bat test\\v1.3.0.0\\VgAutoUpdaterHub.exe VgAutoUpdaterHub 5258"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": false,
+      "Installed": false
+    }
+  ],
+  "CommonScripts": [
+    "install.bat",
+    "uninstall.bat",
+    "common/aa.bat"
+  ]
+}

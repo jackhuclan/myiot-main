@@ -1,0 +1,13 @@
+global trString gsBoardDirectionCheck   = "Please check the direction of the board!";
+
+
+callScript ( scCncCUSTOMERBoardDirectionCheck );
+
+Board Direction Check
+1. OPERATOR FLAGS
+FlagPage3
+UF.BoardDirectionCheck
+
+
+请检查板子的方向！
+检查板子方向

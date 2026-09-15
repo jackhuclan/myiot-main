@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Development
+EXPOSE 8001
+EXPOSE 1883
+COPY "./src/VgAutoDrill.Central.WebApi/bin/Release/net8.0/linux-x64/publish" .
+ENTRYPOINT ["dotnet", "VgAutoDrill.Central.WebApi.dll"]

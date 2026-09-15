@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>$(Version)</Version>
+    <Company>$(Company)</Company>
+    <Copyright>$(Copyright)</Copyright>
+    <WebPage>$(WebPage)</WebPage>
+    <Authors>$(Authors)</Authors>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <BaseIntermediateOutputPath />
+    <PackageReleaseNotes>releaseNotes.md</PackageReleaseNotes>
+    <Description>sdk for auto drill</Description>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeP2PAssets</TargetsForTfmSpecificBuildOutput>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder Condition="'$(Configuration)'=='Debug'">$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <IncludeSymbols>False</IncludeSymbols>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="MQTTnet.AspNetCore" Version="4.3.7.1207" />
+    <PackageReference Include="NLog" Version="5.2.7" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
+    <PackageReference Include="NModbus4.Core" Version="1.0.2" />
+    <PackageReference Include="Quartz" Version="3.6.0" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.6.0" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.6.0" />
+    <PackageReference Include="ClickHouse.Client" Version="6.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\releaseNotes.md" Pack="true" PackagePath="\" />
+    <ProjectReference Include="..\VgAutoDrill.Fundation.CNC\VgAutoDrill.Fundation.CNC.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\VgAutoDrill.Fundation.Iot\VgAutoDrill.Fundation.Iot.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\VgAutoDrill.Fundation.Utils\VgAutoDrill.Fundation.Utils.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\VgAutoDrill.Infrastructure\VgAutoDrill.Infrastructure.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\tools\VgAutoDrill.OpenAPI\VgAutoDrill.OpenAPI.csproj" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="UnitTest.VgAutoDrill.Fundation" />
+    <InternalsVisibleTo Include="PipeServerTest" />
+    <InternalsVisibleTo Include="PipeClientTest" />
+  </ItemGroup>
+  <Target Name="IncludeP2PAssets">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Infrastructure.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.CNC.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Iot.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Utils.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.OpenAPI.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Infrastructure.xml" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.CNC.xml" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Iot.xml" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Utils.xml" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'=='Debug'">
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Infrastructure.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.CNC.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Iot.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Fundation.Utils.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.OpenAPI.pdb" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -1,0 +1,157 @@
+{
+  "Mode": 0,
+  "Enable": true,
+  "AppList": [
+    {
+      "AppName": "drill",
+      "ZipName": "v1.1.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.1.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+        ".\\uninstall.bat drill VgAutoDrill v1.1.0.0"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --file={file} --source={source}",
+        ".\\install.bat drill\\v1.1.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.1.0.0"
+      ],
+      "EnableUpdate": false,
+      "Downloaded": true,
+      "Installed": true
+    },
+    {
+      "AppName": "drill",
+      "ZipName": "v1.2.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.2.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "E:\\AutoUpdate\\drill\\v1.2.0.0",
+      "PreScripts": [
+        ".\\uninstall.bat drill VgAutoDrill v1.2.0.0"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --file={file} --source={source} --DeviceListOptions:Devices[0]:HostAddress={DeviceListOptions:Devices[0]:HostAddress}",
+        ".\\install.bat drill\\v1.2.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.2.0.0"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    },
+    {
+      "AppName": "drill",
+      "ZipName": "v1.4.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.4.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --data={data} --file=E:\\AutoUpdate\\drill\\v1.4.0.0\\conf\\appsettings.Production.json --source=http://192.168.102.253:5258/conf/appsettings.Production.json",
+        ".\\install.bat drill\\v1.4.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.4.0.0",
+        ".\\sharelogs.bat drill\\v1.4.0.0\\logs logs"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    },
+ {
+      "AppName": "drill",
+      "ZipName": "v1.5.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.5.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+       ".\\uninstall.bat drill VgAutoDrill"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --data={data} --file=E:\\AutoUpdate\\drill\\v1.5.0.0\\conf\\appsettings.Production.json --source=http://192.168.102.253:5258/conf/appsettings.Production.json",
+        ".\\install.bat drill\\v1.5.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.5.0.0",
+        ".\\sharelogs.bat drill\\v1.5.0.0\\logs logs"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    },
+ {
+      "AppName": "drill",
+      "ZipName": "v1.6.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.6.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+       ".\\uninstall.bat drill VgAutoDrill"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --data={data} --file=E:\\AutoUpdate\\drill\\v1.6.0.0\\conf\\appsettings.Production.json --source=http://192.168.102.253:5258/conf/appsettings.Production.json",
+        ".\\install.bat drill\\v1.6.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.6.0.0",
+        ".\\sharelogs.bat drill\\v1.6.0.0\\logs logs"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    },
+ {
+      "AppName": "drill",
+      "ZipName": "v1.7.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.7.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+       ".\\uninstall.bat drill VgAutoDrill"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --data={data} --file=E:\\AutoUpdate\\drill\\v1.7.0.0\\conf\\appsettings.Production.json --source=http://192.168.102.253:5258/conf/appsettings.Production.json",
+        ".\\install.bat drill\\v1.7.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.7.0.0",
+        ".\\sharelogs.bat drill\\v1.7.0.0\\logs logs"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    },
+{
+      "AppName": "drill",
+      "ZipName": "v1.8.0.0.zip",
+      "ServiceName": "VgAutoDrill",
+      "AppVersion": "1.8.0.0",
+      "Mode": 0,
+      "Hash": "",
+      "TargetVersion": null,
+      "InstalledLocation": "",
+      "PreScripts": [
+       ".\\uninstall.bat drill VgAutoDrill"
+      ],
+      "PostScripts": [
+        ".\\AppsettingsUpdater\\AppsettingsUpdater.exe --data={data} --file=E:\\AutoUpdate\\drill\\v1.8.0.0\\conf\\appsettings.Production.json --source=http://192.168.102.253:5258/conf/appsettings.Production.json",
+        ".\\install.bat drill\\v1.8.0.0\\Vega.AgentExample.exe VgAutoDrill 8004 drill v1.8.0.0",
+        ".\\sharelogs.bat drill\\v1.8.0.0\\logs logs"
+      ],
+      "EnableUpdate": true,
+      "Downloaded": true,
+      "Installed": true
+    }
+
+  ],
+  "CommonScripts": [
+    "install.bat",
+    "uninstall.bat",
+    "sharelogs.bat",
+    "AppsettingsUpdater.zip"
+  ]
+}

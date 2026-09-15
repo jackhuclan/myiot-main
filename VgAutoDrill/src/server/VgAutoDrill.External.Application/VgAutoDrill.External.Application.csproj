@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>obj\VgAutoDrill.External.Application.xml</DocumentationFile>
+    <AssemblyVersion>
+    </AssemblyVersion>
+    <FileVersion>
+    </FileVersion>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeP2PAssets</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+    <NoWarn>1701;1702;1591;1998;8629;1573;8603;8600;1572;8602;8604;1570;8618</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+    <NoWarn>1701;1702;1591;1998;8629;1573;8603;8600;1572;8602;8604;1570;8618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Http\**" />
+    <Compile Remove="Interfaces\MesServices\ExternalService\**" />
+    <Compile Remove="Services\MesServices\ExternalService\**" />
+    <EmbeddedResource Remove="Http\**" />
+    <EmbeddedResource Remove="Interfaces\MesServices\ExternalService\**" />
+    <EmbeddedResource Remove="Services\MesServices\ExternalService\**" />
+    <None Remove="Http\**" />
+    <None Remove="Interfaces\MesServices\ExternalService\**" />
+    <None Remove="Services\MesServices\ExternalService\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Cache\DataCacheManager.cs" />
+    <Compile Remove="Interfaces\MesServices\IBaseMesService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Net.Http.Headers" Version="8.0.13" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VgAutoDrill.Admin.Application\VgAutoDrill.Admin.Application.csproj" />
+    <ProjectReference Include="..\VgAutoDrill.Admin.Common\VgAutoDrill.Admin.Common.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\VgAutoDrill.Admin.Domain\VgAutoDrill.Admin.Domain.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\VgAutoDrill.External.Model\VgAutoDrill.External.Model.csproj" />
+  </ItemGroup>
+  <Target Name="IncludeP2PAssets">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Common.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Domain.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Model.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Repository.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Common.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Domain.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Model.pdb" />
+      <BuildOutputInPackage Include="$(OutputPath)VgAutoDrill.Admin.Repository.pdb" />
+    </ItemGroup>
+  </Target>
+</Project>

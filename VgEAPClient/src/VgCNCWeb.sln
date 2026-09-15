@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34003.232
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VgCNCServer.DAO", "VgCNCServer.DAO\VgCNCServer.DAO.csproj", "{1CE0CA5C-8634-E9E8-990D-8E7C68439AF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VgCNCWeb", "VgCNCWeb\VgCNCWeb.csproj", "{2F2793AD-BE8E-EFAF-DB2E-14B39E13B3AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1CE0CA5C-8634-E9E8-990D-8E7C68439AF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CE0CA5C-8634-E9E8-990D-8E7C68439AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CE0CA5C-8634-E9E8-990D-8E7C68439AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CE0CA5C-8634-E9E8-990D-8E7C68439AF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F2793AD-BE8E-EFAF-DB2E-14B39E13B3AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F2793AD-BE8E-EFAF-DB2E-14B39E13B3AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F2793AD-BE8E-EFAF-DB2E-14B39E13B3AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F2793AD-BE8E-EFAF-DB2E-14B39E13B3AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BEE4B74A-1AE8-4A22-BF6A-09B0B8FCBCEE}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,157 @@
+﻿using Aspose.Cells;
+using BlazorDownloadFile;
+using Microsoft.EntityFrameworkCore;
+using VgCNCServer.DAO;
+using VgCNCServer.DAO.Models;
+
+namespace VgCNCServer.Razor.Pages.Duty;
+
+public partial class RealTimeDutyList
+{
+    [Inject] private IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
+    [Inject] private IDbContextFactory<VegaContext> contextFactory { get; set; }
+
+    private readonly List<DataTableHeader<usrRealTimeDuty>> _headers = new List<DataTableHeader<usrRealTimeDuty>>
+    {
+      new (){Text= "机台编号",Align= DataTableHeaderAlign.Start,Sortable= false,Value= nameof(usrRealTimeDuty.sEquipmentID)},
+      new (){Text= "方式", Value= nameof(usrRealTimeDuty.sZ)},
+      new (){ Text= "日期", Value= nameof(usrRealTimeDuty.dtDate)},
+      new (){ Text= "采集时间", Value= nameof(usrShiftDuty.sTime)},
+      new (){ Text= "稼动率", Value= nameof(usrRealTimeDuty.sDuty)},
+      new (){ Text= "加工时间", Value= nameof(usrRealTimeDuty.sWorkTime)},
+      new (){ Text= "等待时间", Value= nameof(usrRealTimeDuty.sWaitTime)},
+      new (){ Text= "停机时间", Value= nameof(usrRealTimeDuty.sStopTime)},
+      new (){ Text= "总时间", Value= nameof(usrRealTimeDuty.sTotalTime)},
+      new (){ Text= "孔数", Value= nameof(usrRealTimeDuty.sHits)},
+      new (){ Text= "锣程", Value= nameof(usrRealTimeDuty.sRoutPath)},
+      new (){ Text= "换板次数", Value= nameof(usrRealTimeDuty.sChangePanels)},
+      new (){ Text= "换料次数", Value= nameof(usrRealTimeDuty.sChangeDrills)},
+      new (){ Text= "注册日期", Value= nameof(usrRealTimeDuty.sRegistrationDate)},
+      new (){ Text= "所属班次", Value= nameof(usrRealTimeDuty.sShift)}
+    };
+
+    private List<usrRealTimeDuty> itemSource = new();
+
+    public string? EquipmentID { get; set; }
+
+    public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Now.AddDays(-7));
+
+    public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+
+    #region 新增选择设备
+
+    private bool showModal = false;
+    private List<string> allEquipmentIDs = new List<string>();
+    private readonly Dictionary<string, bool> selectedEquipmentIDs = new Dictionary<string, bool>();
+    private string queryResult = "";
+
+    private void ShowDeviceList()
+    {
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllEquipmentIDs();
+    }
+
+    private async Task LoadAllEquipmentIDs()
+    {
+        using (var context = contextFactory.CreateDbContext())
+        {
+            allEquipmentIDs = await context.sysDrillInformations.Select(s => s.sEquipmentID).Distinct().ToListAsync();
+            foreach (string equipment in allEquipmentIDs)
+            {
+                selectedEquipmentIDs[equipment] = false;
+            }
+        }
+    }
+
+    private void ConfirmSelection()
+    {
+        PerformQuery();
+        CloseModal();
+    }
+
+    private async Task PerformQuery()
+    {
+        var selectedEquipments = selectedEquipmentIDs.Where(d => d.Value).Select(d => d.Key).ToList();
+        using (var context = contextFactory.CreateDbContext())
+        {
+            IQueryable<usrRealTimeDuty> userQuery = context.usrRealTimeDutys.Where(s => s.dtDate >= StartDate && s.dtDate <= EndDate);
+
+            if (selectedEquipments.Any())
+            {
+                userQuery = userQuery.Where(s => selectedEquipments.Contains(s.sEquipmentID));
+            }
+
+            itemSource = await userQuery.OrderByDescending(s => s.dtDate).ThenByDescending(s => s.sTime).ToListAsync();
+        }
+        queryResult = $"查询结果:已选择设备 - {string.Join(", ", selectedEquipments)}";
+        StateHasChanged();
+    }
+
+    #endregion 新增选择设备
+
+    private async Task QueryDetail()
+    {
+        using (var context = contextFactory.CreateDbContext())
+        {
+            IQueryable<usrRealTimeDuty> userQuery = context.usrRealTimeDutys.Where(s => s.dtDate >= StartDate && s.dtDate <= EndDate);
+            if (EquipmentID != null)
+            {
+                userQuery = userQuery.Where(s => s.sEquipmentID.Contains(EquipmentID));
+            }
+            itemSource = await userQuery.OrderByDescending(s => s.dtDate).ThenByDescending(s => s.sTime).ToListAsync();
+        }
+    }
+
+    private async Task ExportExcel()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, $"RealTimeDuty-{DateTime.Now.ToString("yyyyMMdd")}.xlsx");
+        Workbook book = new Workbook();
+        Worksheet sheet = book.Worksheets[0];
+        sheet.Cells[0, 0].PutValue("设备编号");
+        sheet.Cells[0, 1].PutValue("方式");
+        sheet.Cells[0, 2].PutValue("日期时间");
+        sheet.Cells[0, 3].PutValue("稼动率");
+        sheet.Cells[0, 4].PutValue("加工时间");
+        sheet.Cells[0, 5].PutValue("等待时间");
+        sheet.Cells[0, 6].PutValue("停机时间");
+        sheet.Cells[0, 7].PutValue("总时间");
+        sheet.Cells[0, 8].PutValue("孔数");
+        sheet.Cells[0, 9].PutValue("锣程");
+        sheet.Cells[0, 10].PutValue("换板次数");
+        sheet.Cells[0, 11].PutValue("换料次数");
+        sheet.Cells[0, 12].PutValue("注册日期");
+        sheet.Cells[0, 13].PutValue("所属班次");
+        int i = 0;
+        foreach (usrRealTimeDuty v in itemSource)
+        {
+            i++;
+            sheet.Cells[i, 0].PutValue(v.sEquipmentID);
+            sheet.Cells[i, 1].PutValue(v.sZ);
+            sheet.Cells[i, 2].PutValue(v.dtDate + " " + v.sTime);
+            sheet.Cells[i, 3].PutValue(v.sDuty);
+            sheet.Cells[i, 4].PutValue(v.sWorkTime);
+            sheet.Cells[i, 5].PutValue(v.sWaitTime);
+            sheet.Cells[i, 6].PutValue(v.sStopTime);
+            sheet.Cells[i, 7].PutValue(v.sTotalTime);
+            sheet.Cells[i, 8].PutValue(v.sHits);
+            sheet.Cells[i, 9].PutValue(v.sRoutPath);
+            sheet.Cells[i, 10].PutValue(v.sChangePanels);
+            sheet.Cells[i, 11].PutValue(v.sChangeDrills);
+            sheet.Cells[i, 12].PutValue(v.sRegistrationDate);
+            sheet.Cells[i, 13].PutValue(v.sShift);
+        }
+        book.Save(path, SaveFormat.Xlsx);
+        byte[] contentBytes = File.ReadAllBytes(path);
+
+        await BlazorDownloadFileService.DownloadFile(Path.GetFileName(path), contentBytes, "application/octet-stream");
+    }
+}

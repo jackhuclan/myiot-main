@@ -1,0 +1,1025 @@
+﻿@using VgDeviceGateway.Devices.Common;
+@using VgDeviceGateway.Devices.FrontCNC84Drill;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Utils;
+@using VgAutoDrill.Fundation.Iot.Models;
+@inject ILogger<FrontDrill> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IConfiguration configuration
+
+<h3>FrontDrillPage---<span id="deviceId"></span></h3>
+<h3>呼叫条件显示---<span id="callcondition"></span></h3>
+<h3>呼叫函数返回信息---<span id="callResult"></span></h3>
+<h5>呼叫函数小于时间信息---<span id="callTimeResult"></span></h5>
+
+
+<p>
+    <EditForm Model="@frontDrill1ParkingPageTempContext">
+        <InputSelect @bind-Value=@frontDrill1ParkingPageTempContext.splineNum>
+            @for (var i = 1; i <= DrillDevice.DeviceDescriptor.SpindleNum.ToInt(); i++)
+            {
+                <option value="@i">@(i)号轴</option>
+            }
+        </InputSelect>&nbsp;&nbsp;
+    </EditForm>
+    <br />
+
+    <button @onclick="PutUpStatus">
+        查询顶升状态
+    </button>
+    &nbsp; &nbsp;
+    <button @onclick="SetPutUpUp">
+        顶升升起
+    </button>
+    &nbsp; &nbsp;
+    <button @onclick="SetPutUpDown">
+        顶升降下
+    </button>
+</p>
+<p id="text">@message</p>
+
+<p>
+    <button @onclick="PrepareLoadMaterial">
+        上料前准备
+    </button>
+   
+    <button @onclick="CompleteLoadMaterial">
+        上料完成
+    </button>
+
+    <button @onclick="CompleteAllLoadMaterial">
+        上料全部完成
+    </button>
+    <br />
+    <br />
+    <button @onclick="PrepareUnloadMaterial">
+        下料前准备
+    </button>
+    <button @onclick="CompleteUnloadMaterial">
+        下料完成
+    </button>
+    <button @onclick="CompleteAllUnloadMaterial">
+        下料全部完成
+    </button>
+   
+    <br />
+    <br />
+    <button @onclick="CompleteLoadMaterial">
+        上料完成
+    </button>
+    &nbsp; &nbsp;
+    <button @onclick="CompleteAllLoadMaterial">
+        上料全部完成
+    </button>
+    <br />
+    <br />
+
+    <button @onclick="PutUpAllStatus">
+        查询 所有顶升状态
+    </button>
+    <br />
+</p>
+<br />
+<p>
+    <button @onclick="QueryExternalMaterial">
+        查询料仓信息
+    </button>
+</p>
+<br />
+<p>
+    <button @onclick="CallAgv">
+        手动发起呼叫
+    </button>
+</p>
+
+
+板材信息确认
+<br />
+
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 1)
+{
+    <text>轴1使用:</text>
+    <input id="broken1" type="checkbox" @onclick="ChangeSpline1BrokenStatus" @bind="spline1checked" style="margin: 10px" />
+    <br />
+}
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 2)
+{
+    <text>轴2使用:</text>
+    <input id="broken2" type="checkbox" @onclick="ChangeSpline2BrokenStatus" @bind="spline2checked" style="margin: 10px" />
+    <br />
+}
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 3)
+{
+    <text>轴3使用:</text>
+    <input id="broken3" type="checkbox" @onclick="ChangeSpline3BrokenStatus" @bind="spline3checked" style="margin: 10px" />
+    <br />
+}
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 4)
+{
+    <text>轴4使用:</text>
+    <input id="broken4" type="checkbox" @onclick="ChangeSpline4BrokenStatus" @bind="spline4checked" style="margin :10px" />
+    <br />
+}
+
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 5)
+{
+    <text>	轴5使用:</text>
+    <input id="broken5" type="checkbox" @onclick="ChangeSpline5BrokenStatus" @bind="spline5checked" style="margin :10px" />
+    <br />
+}
+@if (DrillDevice.DeviceDescriptor.SpindleNum.ToInt() >= 6)
+{
+    <text>	轴6使用:</text>
+    <input id="broken6" type="checkbox" @onclick="ChangeSpline6BrokenStatus" @bind="spline6checked" style="margin :10px" />
+    <br />
+}
+
+<br />
+
+
+
+<EditForm Model="@frontDrill1ParkingPageTempContext">
+    @foreach (var item in @frontDrill1ParkingPageTempContext.splineSelectContexts)
+    {
+        <InputRadioGroup Name="@item.SplineSelectName" @bind-Value="@item.SplineSelectValue">
+            <text> @item.SplineNum 号轴: </text>
+            <InputRadio Name="@item.SplineSelectName" Value="1" />生料
+            <InputRadio Name="@item.SplineSelectName" Value="-1" />熟料
+            <InputRadio Name="@item.SplineSelectName" Value="0" />无料
+        </InputRadioGroup>
+        <br />
+    }  
+    <button @onclick="EnsureMetarial"> 确认板材信息</button>
+</EditForm>
+
+<br />
+<br />
+<p>当前信息</p>
+<p @ref="messageElement">@currentContext.Message</p>
+@code {
+    public bool spline1checked { get; set; } = false;
+    public bool spline2checked { get; set; } = false;
+    public bool spline3checked { get; set; } = false;
+    public bool spline4checked { get; set; } = false;
+    public bool spline5checked { get; set; } = false;
+    public bool spline6checked { get; set; } = false;
+    private Timer timer;
+    private ElementReference messageElement;
+    public class CurrentContext
+    {
+        public string Message { get; set; } = "";
+    }
+    
+    public int SplineSelectValue { get; set; }
+
+    private CurrentContext currentContext = new CurrentContext();
+    private async void QueryExternalMaterial()
+    {
+        //ShowPanel($"检测门是否已打开，或者气压是否正常：{await DrillDevice.ValidateDoorOpen()} \r\n料仓信息：{JsonSerializer.Serialize(DrillDevice.PayloadPanels)}", true);
+    }
+
+    private async void ShowPanel(string message, bool reset = false)
+    {
+        if (reset) currentContext.Message = $"{message}--{DateTime.Now.ToLocalTime()}";
+        else currentContext.Message = $"{currentContext.Message}{Environment.NewLine}{message}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("handleRequestMaterial", messageElement, currentContext.Message);
+    }
+
+    FrontDrill DrillDevice;
+    protected override void OnInitialized()
+    {
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        DrillDevice = deviceProvider.GetDevice(deviceId) as FrontDrill;
+        var splineSelectContexts = new SplineMaterialContext[DrillDevice.spindleNum];
+        //init  splineSelectContexts
+        {
+            for (int i = 1; i <= DrillDevice.spindleNum; i++)
+            {
+                splineSelectContexts[i - 1] = new SplineMaterialContext()
+                    {
+                        SplineSelectName = $"Spline{i}Name",
+                        SplineNum = i,
+                        SplineSelectValue = -1,
+                    };
+            }
+        }
+        frontDrill1ParkingPageTempContext.splineSelectContexts = splineSelectContexts.ToList();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        try
+        {
+            var frontDrill = deviceProvider.Devices[0] as FrontDrill;
+            DrillDevice = frontDrill;
+            SetTransIdMessage("transtext", frontDrill?.TransactionId);
+            SetTransIdMessage("deviceId", frontDrill?.DeviceId);
+            SetTransIdMessage("newtranstext", frontDrill?.NewTranscationId);
+            SetTransIdMessage("drilltranstext", frontDrill?.DrillTransactionId);
+            SetTransIdMessage("oldtranstext", frontDrill?.OldTransactionId);
+            SetTransIdMessage("callcondition", frontDrill?.CallCondition);
+            SetTransIdMessage("callResult", frontDrill?.callResult);
+            SetTransIdMessage("callTimeResult", frontDrill?.callTimeResult);
+            var lenth = frontDrill?.spindleNum;
+            var charArray = frontDrill?.SplineNoBrokenStatus.ToCharArray();
+
+            if (lenth >= 1) SetCheckIdMessage("broken1", charArray[0] == '1');
+            if (lenth >= 2) SetCheckIdMessage("broken2", charArray[1] == '1');
+            if (lenth >= 3) SetCheckIdMessage("broken3", charArray[2] == '1');
+            if (lenth >= 4) SetCheckIdMessage("broken4", charArray[3] == '1');
+            if (lenth >= 5) SetCheckIdMessage("broken5", charArray[4] == '1');
+            if (lenth >= 6) SetCheckIdMessage("broken6", charArray[5] == '1');
+
+
+            this.JSRuntime.InvokeVoidAsync("Refresh");
+
+        }
+        catch (Exception e)
+        {
+
+            logger.LogDebug($"网页异常 OnAfterRender  {e.Message}");
+        }
+      
+
+
+    }
+    // protected override void OnInitialized()
+    // {
+    //     base.OnInitialized();
+
+    //     if (deviceProvider.Devices.Count == 1)
+    //     {
+    //          DrillDevice = deviceProvider.Devices[0] as FrontDrill;
+    //         var splineSelectContexts = new SplineMaterialContext[DrillDevice.spindleNum];
+    //         //init  splineSelectContexts
+    //         {
+    //             for (int i = 1; i <= DrillDevice.spindleNum; i++)
+    //             {
+    //                 splineSelectContexts[i - 1] = new SplineMaterialContext()
+    //                     {
+    //                         SplineSelectName = $"Spline{i}Name",
+    //                         SplineNum = i,
+    //                         SplineSelectValue = -1,
+    //                     };
+    //             }
+    //         }
+    //         frontDrill1ParkingPageTempContext.splineSelectContexts = splineSelectContexts.ToList();
+    //         SetTransIdMessage("transtext", DrillDeviceTemp?.TransactionId);
+    //         SetTransIdMessage("deviceId", DrillDeviceTemp?.DeviceId);
+    //         SetTransIdMessage("newtranstext", DrillDeviceTemp?.NewTranscationId);
+    //         SetTransIdMessage("drilltranstext", DrillDeviceTemp?.DrillTransactionId);
+    //         SetTransIdMessage("oldtranstext", DrillDeviceTemp?.OldTransactionId);
+    //         SetTransIdMessage("callcondition", DrillDeviceTemp?.CallCondition);
+    //         SetTransIdMessage("callResult", DrillDeviceTemp?.callResult);
+    //         SetTransIdMessage("callTimeResult", DrillDeviceTemp?.callTimeResult);
+    //         var lenth = DrillDeviceTemp?.spindleNum;
+    //         var charArray = DrillDeviceTemp?.SplineNoBrokenStatus.ToCharArray();
+
+    //         if (lenth >= 1) SetCheckIdMessage("broken1", charArray[0] == '1');
+    //         if (lenth >= 2) SetCheckIdMessage("broken2", charArray[1] == '1');
+    //         if (lenth >= 3) SetCheckIdMessage("broken3", charArray[2] == '1');
+    //         if (lenth >= 4) SetCheckIdMessage("broken4", charArray[3] == '1');
+    //         if (lenth >= 5) SetCheckIdMessage("broken5", charArray[4] == '1');
+    //         if (lenth >= 6) SetCheckIdMessage("broken6", charArray[5] == '1');
+    //         this.JSRuntime.InvokeVoidAsync("Refresh");
+    //     }
+    //     else
+    //     {
+    //         OutputMessage($"没有可用的设备或者设备不唯一");
+    //     }
+    // }
+    private void SetTransIdMessage(string id, string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("UpdateInf", id, message);
+    }
+    private void SetCheckIdMessage(string id, bool check)
+    {
+        this.JSRuntime.InvokeVoidAsync("CheckInf", id, check);
+    }
+    public class FrontDrill1ParkingPageTempContext
+    {
+        public int splineNum { get; set; } = 1;
+        public string codeMessage { get; set; } = string.Empty;
+        public int splineValue { get; set; } = -1;
+        public List<SplineMaterialContext> splineSelectContexts = new List<SplineMaterialContext>();
+    }
+    public FrontDrill1ParkingPageTempContext frontDrill1ParkingPageTempContext = new FrontDrill1ParkingPageTempContext();
+
+    string message = "";
+    string Buffer_Automatic = "";
+    public int SplineNum { get; set; } = 5;
+
+    private void OutputMessage(string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("SetText", message);
+    }
+
+
+    private async void EnsureMetarial()
+    {
+        logger.LogDebug("FrontDrill EnsureMetarial...");
+        OutputMessage($"EnsureMetarial 函数 开始执行");
+        //
+        var splineContext= frontDrill1ParkingPageTempContext.splineSelectContexts;
+        DrillDevice.EnsureMetarial(splineContext);
+
+        OutputMessage($"EnsureMetarial 函数执行结果:【完成】");
+    }
+    private async void CallAgv()
+    {
+        logger.LogDebug("FrontDrill CallAgv...");
+        OutputMessage($"PrepareUnloadMaterial 函数 开始执行");
+        var frontDrillEventHandler = DrillDevice.EventContainer[typeof(FrontDrillEventHandler)] as FrontDrillEventHandler;
+        var response = await frontDrillEventHandler.CallAgv();
+        OutputMessage($"CallAgv 函数执行结果:【{response}】");
+    }
+    private async void PrepareUnloadMaterial()
+    {
+        logger.LogDebug("FrontDrill PrepareUnloadMaterial...");
+        OutputMessage($"PrepareUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+           var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+            var response = await device.PrepareUnloadMaterial(new DeviceServiceInvokeRequest
+               {
+                   ProductId = device.ProductId,
+                   DeviceId = device.DeviceId,
+                   ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                   Params = new Dictionary<string, object?>
+                   {
+
+                   }
+               });
+            OutputMessage($"PrepareUnloadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+           OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void CompleteUnloadMaterial()
+    {
+        logger.LogDebug("FrontDrill CompleteUnloadMaterial...");
+        OutputMessage($"CompleteUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] ;
+            var response = await device.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_UNLOAD_MATERIAL_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                {
+                     { "Position",frontDrill1ParkingPageTempContext.splineNum},
+                     { "IsLastStep",false},
+                }
+                });
+            OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void CompleteAllUnloadMaterial()
+    {
+        logger.LogDebug("FrontDrill CompleteAllUnloadMaterial...");
+        OutputMessage($"CompleteAllUnloadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0];
+            var response = await device.CompleteUnloadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.COMPLETE_UNLOAD_MATERIAL_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                {
+                     {"Position",frontDrill1ParkingPageTempContext.splineNum},
+                     {"IsLastStep",true},
+                }
+                });
+            OutputMessage($"CompleteUnloadMaterial 函数执行结果:【{response.Code}】{response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void PutUpStatus()
+    {
+        logger.LogDebug("FrontDrill PutUpStatus...");
+        OutputMessage($"PutUpStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill; //("FrontDrill1001");
+            var response = await device.PutUpStatus(frontDrill1ParkingPageTempContext.splineNum);
+            OutputMessage($"PutUpStatus 函数执行结果:【{response}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+
+    private async void PutUpAllStatus()
+    {
+        logger.LogDebug("FrontDrill PutUpStatus...");
+        OutputMessage($"PutUpStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill; //("FrontDrill1001");
+            var response = await device.PutUpStatus(0);
+            OutputMessage($"PutUpStatus 函数执行结果:【{response}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+    //
+
+    private async void SetPutUpUp()
+    {
+        logger.LogDebug("FrontDrill SetPutUpUp...");
+        OutputMessage($"SetPutUpUp 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill; //("FrontDrill1001");
+            var response = await device.SetPutUpUp(frontDrill1ParkingPageTempContext.splineNum);
+            OutputMessage($"SetPutUpUp 函数执行结果:【{response}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void SetPutUpDown()
+    {
+        logger.LogDebug("FrontDrill SetPutUpDown...");
+        OutputMessage($"SetPutUpDown 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill; //("FrontDrill1001");
+            var response = await device.SetPutUpDown(frontDrill1ParkingPageTempContext.splineNum);
+            OutputMessage($"SetPutUpDown 函数执行结果:【{response}】");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void PrepareLoadMaterial()
+    {
+        logger.LogDebug("FrontDrill PrepareLoadMaterial...");
+        OutputMessage($"PrepareLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var response = await device.PrepareLoadMaterial(new DeviceServiceInvokeRequest
+                {
+                    ProductId = device.ProductId,
+                    DeviceId = device.DeviceId,
+                    ServiceId = Topics.Services.PREPARE_UNLOAD_MATERIAL_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                    {
+                        { "Position",frontDrill1ParkingPageTempContext.splineNum},
+                        { "IsLastStep",false}
+                    }
+                });
+            OutputMessage($"PrepareLoadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+
+    }
+
+    private async void CompleteLoadMaterial()
+    {
+        logger.LogDebug("FrontDrill1ParkingTemp CompleteLoadMaterial...");
+        OutputMessage($"CompleteLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+           var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+           var response = await device.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+               {
+                   ProductId = device.ProductId,
+                   DeviceId = device.DeviceId,
+                   ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                   Params = new Dictionary<string, object?>
+                   {
+                       { "Position",frontDrill1ParkingPageTempContext.splineNum},
+                       { "IsLastStep",false},
+                       { "LoadingPanel",new SwapPanel()
+                        {
+                          PanelList=new List<Panel>()
+                             {
+                                 new Panel()
+                                 {
+                                     BatchCode="p1",
+                                     ItemCode="item01",
+                                     PanelCode="123456",
+                                     Position=@frontDrill1ParkingPageTempContext.splineNum,
+                                     Layer=0
+
+
+                                 }
+                             }
+                        }
+                     },
+                   }
+               });
+            OutputMessage($"CompleteLoadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+           OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+    private async void CompleteAllLoadMaterial()
+    {
+        logger.LogDebug("RearDrill2543 CompleteAllLoadMaterial...");
+        OutputMessage($"CompleteAllLoadMaterial 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+           var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+           var response = await device.CompleteLoadMaterial(new DeviceServiceInvokeRequest
+               {
+                   ProductId = device.ProductId,
+                   DeviceId = device.DeviceId,
+                   ServiceId = Topics.Services.COMPLETE_LOAD_MATERIAL_SERVICE_ID,
+                   Params = new Dictionary<string, object?>
+                   {
+
+                       { "Position",frontDrill1ParkingPageTempContext.splineNum},
+                        { "LoadingPanel",new SwapPanel()
+                        {
+                          PanelList=new List<Panel>()
+                             {
+                                 new Panel()
+                                 {
+                                     BatchCode="p1",
+                                     ItemCode="item01",
+                                     PanelCode="123456",
+                                     Position=@frontDrill1ParkingPageTempContext.splineNum,
+                                     Layer=0
+
+
+                                 }
+                             }
+                        }
+                     },
+                       { "IsLastStep",true}
+                   }
+               });
+            OutputMessage($"CompleteAllLoadMaterial 函数执行结果:【{response.Code}】 {response.Message}");
+        }
+        else
+        {
+           OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+
+
+
+    private async void PropertiesRead()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp PropertiesRead...");
+        //OutputMessage($"PropertiesRead 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.ReadProperties(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.PROPERTIES_READ_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //        {
+        //           { "Buffer_Automatic","" }
+        //        }
+        //        });
+        //    OutputMessage($"PropertiesRead 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+    //
+    private async void InitPayloadPanel()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp PropertiesWrite...");
+        //OutputMessage($"InitPayloadPanel 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.WriteProperties(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //        {
+        //             { "PayloadPanels",new List<Panel?>()
+        //                {
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000001",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 1,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    },
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000002",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 2,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    },
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000003",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 3,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    },
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000004",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 4,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    },
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000005",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 5,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    },
+        //                     new Panel
+        //                    {
+        //                        PanelCode = $"2023100000006",
+        //                        ItemCode ="1111" ,
+        //                        ProductStatus = ProductStatus.PRE_DRILL_TRANSFER_AGV_OUTPUT_2,
+        //                        // DrillState = PanelDrillState.Unknown,
+        //                        SiloCode = $"Silo01",
+        //                        Layer = 0,
+        //                        Position = 6,
+        //                        BatchCode = "",
+        //                        LotId = "",
+        //                    }
+
+        //                }
+        //             }
+
+
+
+
+
+        //       },
+        //        });
+        //    OutputMessage($"InitPayloadPanel 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+
+    }
+
+    private async void PropertiesWrite()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp PropertiesWrite...");
+        //OutputMessage($"PropertiesWrite 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.WriteProperties(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //        {
+        //            {"Drill_OnNoWork",true }
+
+        //        }
+        //        });
+        //    //message = $"PropertiesWrite 函数执行结果:【{response.Code}】";
+        //    OutputMessage($"PropertiesWrite 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+
+    private async void LoadMeterial()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp LoadMeterial...");
+        //OutputMessage($"LoadMeterial 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.InvokeLoadMaterial(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.INVOKE_LOAD_MATERIAL_SERVICE_ID,
+        //            Params = new Dictionary<string, object?> { }
+        //        });
+        //    //message = $"PropertiesRead 函数执行结果:【{response.Code}】";
+        //    OutputMessage($"LoadMeterial 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void UnloadMeterial()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp UnloadMeterial...");
+        //OutputMessage($"UnloadMeterial 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.InvokeUnloadMaterial(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.INVOKE_UNLOAD_MATERIAL_SERVICE_ID,
+        //            Params = new Dictionary<string, object?> { }
+        //        });
+        //    // message = $"PropertiesRead 函数执行结果:【{response.Code}】";
+        //    OutputMessage($"UnloadMeterial 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void Work()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp work...");
+        //OutputMessage($"Work 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.Work(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.WORK_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //            {
+
+        //            }
+        //        });
+
+        //    OutputMessage($"Work 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void Standby()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp Standby...");
+        //OutputMessage($"Standby 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.Standby(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.STANDBY_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //            {
+
+        //            }
+        //        });
+
+        //    OutputMessage($"Standby 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void Shutdown()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp Shutdown...");
+        //OutputMessage($"Shutdown 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.Shutdown(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.SHUTDOWN_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //            {
+
+        //            }
+        //        });
+        //    OutputMessage($"Shutdown 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void ScheduleTask()
+    {
+        //logger.LogDebug("FrontDrill1ParkingTemp ScheduleTask...");
+        //OutputMessage($"ScheduleTask 函数 开始执行");
+        //if (deviceProvider.Devices.Count == 1)
+        //{
+        //    var device = deviceProvider.Devices[0]; //("FrontDrill1001");
+        //    var response = await device.ScheduleTask(new DeviceServiceInvokeRequest
+        //        {
+        //            ProductId = device.ProductId,
+        //            DeviceId = device.DeviceId,
+        //            ServiceId = Topics.Services.SCHEDULE_TASK_SERVICE_ID,
+        //            Params = new Dictionary<string, object?>
+        //            {
+
+        //            }
+        //        });
+        //    OutputMessage($"ScheduleTask 函数执行结果:【{response.Code}】");
+        //}
+        //else
+        //{
+        //    OutputMessage($"没有可用的设备或者设备不唯一");
+        //}
+    }
+
+
+    private async void ChangeSpline1BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSplineBrokenStatus...");
+        OutputMessage($"ChangeSplineBrokenStatus 函数 开始执行");
+
+    
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[0] = spline1checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline1BrokenStatus 函数 开始执行 结束  {spline1checked}{device.SplineNoBrokenStatus}");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline2BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSpline2BrokenStatus...");
+        OutputMessage($"ChangeSpline2BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[1] = spline2checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline2BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline3BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSpline3BrokenStatus...");
+        OutputMessage($"ChangeSpline3BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[2] = spline3checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline3BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline4BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSpline4BrokenStatus...");
+        OutputMessage($"ChangeSpline4BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[3] = spline4checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline4BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+    private async void ChangeSpline5BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSpline5BrokenStatus...");
+        OutputMessage($"ChangeSpline5BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[4] = spline5checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline5BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+    //
+    private async void ChangeSpline6BrokenStatus()
+    {
+        logger.LogDebug("FrontDrill ChangeSpline6BrokenStatus...");
+        OutputMessage($"ChangeSpline6BrokenStatus 函数 开始执行");
+        if (deviceProvider.Devices.Count == 1)
+        {
+            var device = deviceProvider.Devices[0] as FrontDrill;
+            var charArray = device.SplineNoBrokenStatus.ToCharArray();
+            charArray[5] = spline6checked ? '1' : '0';
+            device.SplineNoBrokenStatus = new string(charArray);
+            OutputMessage($"ChangeSpline6BrokenStatus 函数 开始执行 结束");
+        }
+        else
+        {
+            OutputMessage($"没有可用的设备或者设备不唯一");
+        }
+    }
+
+}

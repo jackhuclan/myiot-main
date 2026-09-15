@@ -1,0 +1,6 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 8002
+COPY "./docs/sources.list" /etc/apt
+COPY "./src/server/VgAutoDrill.DataCollect.WebApi/bin/Release/net8.0/linux-x64" .
+ENTRYPOINT ["dotnet", "VgAutoDrill.DataCollect.WebApi.dll"]

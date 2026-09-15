@@ -1,0 +1,30 @@
+{
+  "code": "SUCCESS",
+  "message": "获取成功",
+  "Info": "item02",
+  "data": {
+    "lifeDefines": [
+      {
+        "pgmDiameter": 0.25,
+        "moCount": 0,
+        "life": 15
+      }
+    ],
+    "arranges": [
+      {
+        "TrayIndex": 2,
+        "site": 1,
+        "pgmdiameter": 0.25,
+        "mocount": 0,
+        "life": 15
+      },
+      {
+        "TrayIndex": 2,
+        "site": 11,
+        "pgmdiameter": 0.25,
+        "mocount": 0,
+        "life": 15
+      }
+    ]
+  }
+}

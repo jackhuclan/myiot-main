@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+COPY "./src/VgAutoDrill.Agent/bin/Release/net8.0/linux-x64" .
+ENTRYPOINT ["dotnet", "VgAutoDrill.Agent.dll"]

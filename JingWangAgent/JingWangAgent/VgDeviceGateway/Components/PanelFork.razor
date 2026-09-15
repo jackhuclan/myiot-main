@@ -1,0 +1,526 @@
+﻿@using System.Text.Json;
+@using System.ComponentModel;
+@using Microsoft.Extensions.Options;
+@using System.Text.Encodings.Web
+@using System.Text.Unicode
+@using System.Web
+@using VgAutoDrill.OpenAPI
+@using VgDeviceGateway.Devices.Common;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Iot.Configuration;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@using VgDeviceGateway.Devices;
+@using VgDeviceGateway.Devices.Fork;
+@using System.Text;
+@using DevicePanelFork = VgDeviceGateway.Devices.Fork.PanelFork
+@inject ILogger<DevicePanelFork> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IOptions<CentralWebOptions> options;
+@inject IConfiguration configuration
+
+<h3>
+    @transfer.DeviceId - @transfer.DeviceName
+    <div id="status" style="width:30px;height:30px;display:inline-block;background:url(/images/machine.png);background-size:cover;"></div>
+</h3>
+
+<text>料架呼叫事件信息：</text>
+<p @ref="transtextElement" id="transtext"></p>
+
+<EditForm Model="@currentContext">
+    <p>
+        选择中转位
+        <Select @onchange="ChageRack" value="@currentContext.RackIndex" style="width:200px;">
+            @if (transfer.DeviceDescriptor.Extra["IsStandAlone"].ToBool())
+            {
+                @for (var i = 1; i <= transfer.DeviceDescriptor.SpindleNum.ToInt(); i++)
+                {
+                    <option value="@i">@i</option>
+                }
+            }
+            else
+            {
+                @for (var i = 0; i < transfer.RackInfos.Count; i++)
+                {
+                    <option value="@i">@transfer.RackInfos[i].Code</option>
+                }
+            }
+
+        </Select>
+
+        <button @onclick="QueryAllLocationPanels">
+            查询所有料架板材信息
+        </button>
+    </p>
+
+    <p>
+        <button @onclick="EnsureNoPayload">
+            @($"设置当前库位{currentContext.RackIndex}为空位置")
+        </button>
+        <button @onclick="LoadExternalMaterial">
+            @($"设置当前库位{currentContext.RackIndex}上的板料信息")
+        </button>
+        <button @onclick="CallAgv">
+            @($"发起当前库位{currentContext.RackIndex}上的调度")
+        </button>
+        <button @onclick="ResetCallAgv">
+            @($"取消当前库位{currentContext.RackIndex}上的调度")
+        </button>
+        <button @onclick="QueryLocationPanels">
+            @($"查询当前库位{currentContext.RackIndex}上的板材信息")
+        </button>
+        <button @onclick="QueryProperties">
+            @($"查询当前库位{currentContext.RackIndex}上的属性信息")
+        </button>
+    </p>
+
+    <p>
+        <table>
+            <tr>
+                <td><label>料仓序号</label></td>
+                <td>
+                    <InputSelect @bind-Value="currentContext.LocationCode" style="width:100%;">
+                        @foreach (var siloCode in transfer.SiloCodes)
+                        {
+                            <option value="@siloCode">@siloCode</option>
+                        }
+                    </InputSelect>
+                </td>
+                <td>
+                    <button @onclick="ReloadSiloCodes">
+                        更新料仓编号
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td><label>请输入起始层</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.StartLayer>
+                        @for (var i = 0; i < transfer.DeviceDescriptor.LayerLimit.ToInt(); i++)
+                        {
+                            <option value="@i">@(i + 1) 层</option>
+                        }
+                    </InputSelect>
+                </td>
+            </tr>
+
+            <tr>
+                <td><label>板料类型</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.PanelType>
+                        <option value="0">空</option>
+                        <option value="1">生料</option>
+                        <option value="2">熟料</option>
+                    </InputSelect>
+                </td>
+            </tr>
+            <tr>
+                <td><label>请输入物料代码</label></td>
+                <td>
+                    <InputSelect @bind-Value="currentContext.ItemCode" style="width:100%;">
+                        @if (transfer.MaterialModels != null)
+                        {
+                            @foreach (var rh in transfer.MaterialModels)
+                            {
+                                <option value="@rh.Code">@rh.Code</option>
+                            }
+                        }
+                    </InputSelect>
+                </td>
+                <td align="center"><label>排序: </label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.ItemOrder>
+                        <option value="2" selected>按创建时间倒序</option>
+                        <option value="3">按物料代码正序</option>
+                        <option value="4">按物料代码倒序</option>
+                    </InputSelect>
+                </td>
+                <td style="padding-left:10px" align="right"><label>模糊匹配: </label></td>
+                <td> <InputText @bind-Value=@currentContext.MaterialMatchCode></InputText></td>
+                <td style="padding-left:5px">
+                    <button @onclick="ReloadMaterialCodes">
+                        刷新物料
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>装载到料架的Panel数量</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.RawPanelCount></InputNumber>
+                </td>
+
+            </tr>
+            <tr>
+                <td>
+                    <label>板料宽度</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PanelWidth></InputNumber>
+                </td>
+                <td>
+                    请输入低于625的值
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>每层片数</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.Pcs></InputNumber>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>指定AGV(直接发起,测试用)</label>
+                </td>
+                <td>
+                    <InputSelect @bind-Value="@currentContext.AGVCode" style="width:200px;">
+                        <option value="">--请选择AGV--</option>
+                        @foreach (var i in transfer.DeviceDescriptor.Extra["AGVCodes"].ToString().Split(','))
+                        {
+                            <option value="@i.ToStr().Trim()">@i</option>
+                        }
+                    </InputSelect>
+                </td>
+            </tr>
+        </table>
+    </p>
+
+    <p>当前信息</p>
+    <p style="font-size:large;" @ref="messageElement">@currentContext.Message</p>
+</EditForm>
+
+@code {
+    private ElementReference messageElement;
+    private ElementReference transtextElement;
+    private List<MaterialModel> _rhModel = new List<MaterialModel> { new MaterialModel { Code = "" } };
+    private List<string> SiloCodes { get; set; } = new List<string>() { "" };
+    private string TransactionId = "";
+    private string SensorNo = string.Empty;
+    private string taskCode = string.Empty;
+    private string task = string.Empty;
+    private string material = string.Empty;
+    private string SiloCode = string.Empty;
+    private string bind = string.Empty;
+    private string pcs = string.Empty;
+    private string mapDataCode = string.Empty;
+    DevicePanelFork transfer;
+    CurrentContext currentContext;
+    JsonSerializerOptions Jsonoptions;
+
+    protected override void OnInitialized()
+    {
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        transfer = (DevicePanelFork)deviceProvider.GetDevice(deviceId);
+        currentContext = transfer.Locations[1].CurrentContext;
+        currentContext.RawPanelCount = transfer.DeviceDescriptor.LayerLimit;
+        currentContext.RackIndex = 1;
+
+        Jsonoptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = true
+            };
+
+        transfer.PeriodicTimers["5s"]!.OnTick += () => Task.Run(() =>
+        {
+            var sbl = new StringBuilder();
+            foreach (var location in transfer.Locations.Values)
+            {
+                if(!string.IsNullOrWhiteSpace(location.TranscationId))
+                {
+                    sbl.AppendLine($"{location.Position}号料架: {location.TranscationId}");
+                }
+                else
+                {
+                    sbl.AppendLine($"{location.Position}号料架: {location.TransactionMessage}");
+                }
+            }
+
+            OutputMessageTranc(sbl.ToString());
+        });
+    }
+
+    private async Task ReloadMaterialCodes()
+    {
+        await transfer.GetPanelItemCodeAsync((QueryOrderByEnum)currentContext.ItemOrder, currentContext.MaterialMatchCode);
+        OutputMessage($"获取物料代码成功，当前排序方式：{((QueryOrderByEnum)currentContext.ItemOrder).ToString()}", true);
+        await InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+    private async Task ChageRack(ChangeEventArgs e)
+    {
+        var rackIndex = e.Value.ToInt();
+        currentContext = transfer.Locations[rackIndex].CurrentContext;
+        currentContext.RackIndex = rackIndex;
+        await QueryLocationPanels();
+    }
+
+    private void Show(bool res)
+    {
+        if (res)
+        {
+            this.JSRuntime.InvokeVoidAsync("success");
+        }
+        else
+        {
+            this.JSRuntime.InvokeVoidAsync("fail");
+        }
+    }
+
+    private async void OutputMessage(string message, bool reset = false)
+    {
+        message = $"{message}{Environment.NewLine}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("setElementText1", messageElement, message);
+    }
+
+    private void OutputMessageTranc(string message)
+    {
+        this.JSRuntime.InvokeVoidAsync("setElementText1", transtextElement, message);
+    }
+
+    private async Task GetRackInfo()
+    {
+        var response = await transfer.GetRackInfo();
+
+        OutputMessage($"PrepareLoadMaterial 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+    }
+
+    private async Task ReloadSiloCodes()
+    {
+        if (SiloCodes == null)
+            SiloCodes = new List<string>();
+        else
+            SiloCodes.Clear();
+        SiloCodes.Add("");
+
+        var siloCodes = await transfer.GetSiloCodeAsync();
+        SiloCodes.AddRange(siloCodes);
+        transfer.SiloCodes = SiloCodes;
+        OutputMessage("更新料仓编码成功", true);
+        await InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+    private async Task EnsureNoPayload()
+    {
+        if (string.IsNullOrEmpty(transfer.Locations[currentContext.RackIndex].TranscationId))
+        {
+            if (transfer.Locations[currentContext.RackIndex].Panels.Count == 0)
+            {
+                transfer.Locations[currentContext.RackIndex].Panels = Panel.NoSilo.PanelForSingleSpindle(currentContext.RackIndex, 0, transfer.layerLimit);
+            }
+
+            currentContext.Reset();
+            transfer.Locations[currentContext.RackIndex].Panels.SetNoPayload();
+            transfer.Locations[currentContext.RackIndex].IsReady = true;
+            await QueryLocationPanels();
+        }
+        else
+        {
+            OutputMessage($"库位{currentContext.RackIndex}上已经存在调度，要改变板料必须先取消现有调度", true);
+        }
+    }
+
+    private async Task ResetCallAgv()
+    {
+        var response = await transfer.Locations[currentContext.RackIndex].ReportCancelSchedule();
+        if (response.Code == ErrorCodes.Sys.SUCCESS)
+        {
+            OutputMessage($"库位{currentContext.RackIndex}上的调度已经被取消，请重新设置板料！", true);
+        }
+        else
+        {
+            OutputMessage(response.Message, true);
+        }
+    }
+
+    private async Task LoadExternalMaterial()
+    {
+
+        if (!string.IsNullOrEmpty(transfer.Locations[currentContext.RackIndex].TranscationId))
+        {
+            OutputMessage($"库位{currentContext.RackIndex}上已经存在调度，要改变板料必须先取消现有调度", true);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(currentContext.SiloCode))
+        {
+            OutputMessage("请输入料仓序号", true);
+            return;
+        }
+
+        if (currentContext.PanelType != 0 && string.IsNullOrEmpty(currentContext.ItemCode))
+        {
+            OutputMessage("请输入物料代码", true);
+            return;
+        }
+        // if (currentContext.PanelWidth > 625)
+        // {
+        //     OutputMessage("请输入输入低于或等于625的板宽", true);
+        //     return;
+        // }
+        if (currentContext.StartLayer + currentContext.RawPanelCount > transfer.DeviceDescriptor.LayerLimit.ToInt())
+        {
+            OutputMessage($"层数+加载数量不能大于{transfer.DeviceDescriptor.LayerLimit.ToInt()}层", true);
+            return;
+        }
+
+        if (!transfer.Locations[currentContext.RackIndex].Panels.Any())
+        {
+            transfer.Locations[currentContext.RackIndex].Panels = Panel.NoSilo.PanelForSingleSpindle(currentContext.RackIndex, currentContext.StartLayer, transfer.layerLimit);
+        }
+
+        var layer = currentContext.StartLayer;
+        var productStatus = ProductStatus.EmptySiloBox;
+
+        if (currentContext.PanelType == 0)
+        {
+            productStatus = ProductStatus.EmptySiloBox;
+        }
+        else if (currentContext.PanelType == 1)
+        {
+            productStatus = ProductStatus.Finished_PIN;
+        }
+        else if (currentContext.PanelType == 2)
+        {
+            productStatus = ProductStatus.Finished_DRILL;
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentContext.ItemCode))
+        {
+            var request = new GetNextPanelRequest()
+                {
+                    BeginLayer = currentContext.StartLayer,
+                    Count = currentContext.RawPanelCount,
+                    ItemCode = currentContext.ItemCode,
+                    // PanelWidth = currentContext.PanelWidth,
+                    PinOffset = currentContext.PinOffset,
+                    ProductStatus = productStatus,
+                    SiloCode = "",
+                    Position = 1,
+                    BatchCode = "",
+                    LotId = "",
+                };
+
+            var response = await httpRequestInvoker.PostAsJsonAsync<GetNextPanelRequest, List<Panel>>(transfer.DeviceDescriptor.Extra["GetNextPanelNumberV2"].ToStr(), request);
+            if (response == null)
+            {
+                OutputMessage("请重试，未能重新生成板料信息");
+                return;
+            }
+            else if (response.Count < currentContext.RawPanelCount)
+            {
+                OutputMessage($"请重试。生成的数量【{response.Count}】与需要的数量【{currentContext.RawPanelCount}】,不一致，");
+                return;
+            }
+
+            for (var i = 0; i < currentContext.RawPanelCount; i++)
+            {
+                var panelInf = Guid.NewGuid().ToString();
+                if (response != null && response.Count > i)
+                {
+                    var panel = transfer.Locations[currentContext.RackIndex].Panels.FirstOrDefault(x => x.Layer == currentContext.StartLayer + i);
+                    if (panel != null)
+                    {
+                        panel.PanelCode = response[i].PanelCode;
+                        panel.SiloCode = currentContext.SiloCode;
+                        panel.ProductStatus = productStatus;
+                        panel.PanelWidth = response[i].PanelWidth;
+                        panel.PanelLength = response[i].PanelLength;
+                        panel.ItemCode = currentContext.ItemCode;
+                        panel.Pcs = response[i].Pcs;
+                        panel.PinOffset = currentContext.PinOffset;
+                        panel.LocationCode = transfer.GetLocationCode(currentContext.RackIndex);
+                    }
+                }
+            }
+        }
+        transfer.Locations[currentContext.RackIndex].Panels.UpdateItemCode(x => x.Layer >= currentContext.StartLayer, currentContext.ItemCode);
+        transfer.Locations[currentContext.RackIndex].Panels.SetSiloCode(currentContext.SiloCode);
+        transfer.Locations[currentContext.RackIndex].Panels.UpdateProductStatus(x => x.Layer >= currentContext.StartLayer, productStatus);
+        transfer.Locations[currentContext.RackIndex].IsReady = true;
+        await QueryLocationPanels();
+    }
+
+    private async Task QueryLocationPanels()
+    {
+        var shelfIndex = currentContext.RackIndex;
+        var allstr = $"第{shelfIndex}号料架" + Environment.NewLine;
+        var panels = transfer.Locations[currentContext.RackIndex].Panels;
+        for (int i = 0; i < panels.Count; i++)
+        {
+            allstr += $"第{i + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(panels[i])} {Environment.NewLine}";
+        }
+        OutputMessage(allstr, true);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task QueryAllLocationPanels()
+    {
+        string allstr = string.Empty;
+        foreach (var location in transfer.Locations)
+        {
+            allstr += $"第{location.Key}个料架: {Environment.NewLine}";
+            foreach (var item in location.Value.Panels)
+            {
+                allstr += $"第{item.Layer + 1}层：{Newtonsoft.Json.JsonConvert.SerializeObject(item)} {Environment.NewLine}";
+            }
+        }
+
+        OutputMessage(allstr, true);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetAllCooked()
+    {
+        if (string.IsNullOrEmpty(transfer.Locations[currentContext.RackIndex].TranscationId))
+        {
+            transfer.Locations[currentContext.RackIndex].Panels.UpdatePanelInfo(currentContext.RackIndex, ProductStatus.Finished_DRILL);
+            transfer.Locations[currentContext.RackIndex].IsReady = true;
+            await QueryLocationPanels();
+        }
+        else
+        {
+            OutputMessage($"库位{currentContext.RackIndex}上已经存在调度，要改变板料必须先取消现有调度", true);
+        }
+    }
+
+    private void QueryProperties()
+    {
+        var locationData = transfer.Locations[currentContext.RackIndex];
+        OutputMessage(Newtonsoft.Json.JsonConvert.SerializeObject(new
+        {
+            locationData.TranscationId,
+            locationData.TransactionMessage,
+            locationData.LocationCode,
+            locationData.Position,
+            PanelsCount = locationData.Panels.Count,
+            locationData.Panels.PanelSnapshot,
+            locationData.TransAGVIdePoint,
+            locationData.TransAGVInnerPoint,
+            locationData.TransAGVMiddlePoint,
+            locationData.TransAGVOutputPoint,
+        }), true);
+        Show(true);
+    }
+
+    private async Task CallAgv()
+    {
+        if (!string.IsNullOrEmpty(transfer.Locations[currentContext.RackIndex].TranscationId))
+        {
+            OutputMessage($"当前库位{currentContext.RackIndex}已经存在调度，请先取消该调度", true);
+            return;
+        }
+
+        var response = await transfer.Locations[currentContext.RackIndex].StartNewSchedule(currentContext.AGVCode);
+        OutputMessage(response.Message, true);
+    }
+}

@@ -1,0 +1,193 @@
+{
+  "MaxHttpCollectionKeys": 20000,
+  "DetailedErrors": true,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Microsoft": "Warning",
+      "System": "Warning",
+      "Microsoft.AspNetCore": "Warning",
+      "Quartz": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "VgAutoDrill.Fundation.Iot.Jobs.KeepingDeviceConnectionJob": "Warning",
+      "VgAutoDrill.Fundation.Iot.HttpRequestInvoker": "Warning"
+    },
+    "Console": {
+      "LogLevel": {
+        "Default": "Warning",
+        "Microsoft": "Warning",
+        "System": "Warning",
+        "Microsoft.AspNetCore": "Warning",
+        "Quartz": "Warning",
+        "Microsoft.Hosting.Lifetime": "Information",
+        "VgAutoDrill.Fundation.Iot.Jobs.KeepingDeviceConnectionJob": "Warning",
+        "VgAutoDrill.Fundation.Iot.HttpRequestInvoker": "Warning"
+      },
+      "FormatterName": "Simple",
+      "FormatterOptions": {
+        "SingleLine": true,
+        "IncludeScopes": true,
+        "TimestampFormat": "[yyyy-MM-dd HH:mm:ss] "
+      }
+    }
+  },
+  //MockAGVExamplePage
+  //MockAGVPage
+  //MockDrillPage
+  //RearDrill2849D10Page
+  //FrontDrillPage
+  //DrillPage
+  "PageController": "TransferLocationPage",
+  //MockAGVExample01
+  //RearDrill2849Page
+  //SiloShelfPage
+  "PageMasterDeviceId": "WH04",
+  "CentralWebOptions": {
+    "Channel": "http", //上下行消息通道，http/mqtt，默认http
+    "DeviceConfig": "http://10.50.222.71:8001/v1/central/device/config",
+    "PropertiesRead": "http://10.50.222.71:8001/v1/central/Device/properties/read",
+    "PropertiesWrite": "http://10.50.222.71:8001/v1/central/Device/properties/write",
+    "EventReport": "http://10.50.222.71:8001/v1/central/Device/event/report",
+    "ServicePrepare": "http://10.50.222.71:8001/v1/central/Device/service/prepare",
+    "ServiceInvoke": "http://10.50.222.71:8001/v1/central/Device/service/invoke",
+    "ServiceComplete": "http://10.50.222.71:8001/v1/central/Device/service/complete",
+    "PropertiesReport": "http://10.50.222.71:8001/v1/central/Device/properties/report",
+    "StatusReport": "http://10.50.222.71:8001/v1/central/Device/status/report",
+    "AlarmReport": "http://10.50.222.71:8001/v1/central/Device/alarm/report",
+    "ScheduleStart": "http://10.50.222.71:8001/v1/central/schedule/start",
+    "ScheduleFail": "http://10.50.222.71:8001/v1/central/schedule/fail",
+    "ScheduleCancel": "http://10.50.222.71:8001/v1/central/schedule/cancelSchedule",
+    "ScheduleComplete": "http://10.50.222.71:8001/v1/central/schedule/complete",
+    "DrillTaskComplete": "http://10.50.222.71:8001/v1/central/mes/completeDrillTask",
+    "BeginTask": "http://10.50.222.71:8001/v1/central/mes/beginTask",
+    "FinishTask": "http://10.50.222.71:8001/v1/central/mes/finishTask",
+    "GetItemCode": "http://10.50.222.71:8001/v1/central/mes/GetItemCode",
+    "ProcessReportSchedule": "http://10.50.222.71:8001/v1/central/schedule/processReport",
+    "ServiceInvokeV2": "http://10.50.222.71:8001/v2/central/Device/service/invoke",
+    "Gateway": "http://10.50.222.71:8001/v1/central/gateway",
+    "PanelReport": "http://10.50.222.71:8001/v1/central/Device/panel/report"
+  },
+  "PluginSetupOptions": [
+    {
+      "PluginDirectory": ".",
+      "AssemblyFileName": "VegaIot.External.Hik.dll",
+      "PluginName": "VegaIotExternalHikSetup",
+      "Enabled": true
+    }
+  ],
+  "MqttServerOptions": {
+    "Host": "10.50.222.71",
+    "Port": 1883,
+    "EnableHeartbeat": true
+  },
+  "MemoryCacheOptions": {
+    "ExpirationScanFrequency": 3600000
+  },
+  "ClickHouseOptions": {
+    "ConnectionString": "Compress=False;BufferSize=32768;SocketTimeout=10000;CheckCompressedHash=False;Compressor=lz4;Host=10.50.222.71;Port=8123;Database=vg_autodrill_db_ck;User=default;Password=",
+    //"ConnectionString": "Host=192.168.104.214;Port=8123;Database=vg_autodrill_db_ck;User=default;Password=",
+    //"ConnectionString": "Host=localhost;Port=8123;Database=vg_autodrill_db_ck;User=default;Password=",
+    "Compression": true,
+    "Session": false,
+    "CustomDecimals": true,
+    "PropertiesReportEnabled": false,
+    "EventReportEnabled": true,
+    "ServiceReportEnabled": true,
+    "StatusReportEnabled": true,
+    "AlarmReportEnabled": true,
+    "Enabled": false
+  },
+  "DeviceGatewayOptions": {
+    "AppName": "agent",
+    "ServiceName": "VegaAuto.D10-241-242-243", //安装的windows服务名称
+    "AppVersion": "1.0.0.0",
+    "InstalledLocation": "D:\\work\\packages", //举例
+    "HostAddress": "http://192.168.1.100:5257",
+    "NoticeCentralHeartbeat": "00:05:00",
+    "Enabled": false
+  },
+  "PeriodicTimerExecutorFactoryOptions": {
+    "Intervals": [ "20s" ]
+  },
+  "DeviceStoreOptions": {
+    "SavePath": "data",
+    "Enabled": true,
+    "PanelSaveEnabled": true
+  },
+  "DeviceListOptions": {
+    "Devices": [
+      {
+        "ProductId": "PanelFork",
+        "DeviceId": "WH04",
+        "DeviceName": "中转区代理",
+        "DeviceClazz": "VegaIot.External.Hik.HikTransfer",
+        "DeviceDllFilePath": "VegaIot.External.Hik.dll",
+        "HostAddress": "http://10.50.116.202:8004",
+        "AutoMode": true,
+        "SoloMode": false,
+        "DataCollectingPerSeconds": 5,
+        "KeepingPlcConnectionPerSeconds": 5,
+        "DeviceKind": "PanelSiloFork",
+        "SpindleNum": 24,
+        "LayerLimit": 16,
+        "InputCapabilities": [ "PRE_POST_BUFFER_TRANSFER_AGV_OUTPUT_1" ],
+        "OutputCapabilities": [ "Finished_PRE_BUFFER" ],
+        "Extra": {
+          "ShelfKind": "Kinwong",
+          "ShelfAgvPositionList": "ZZW001,ZZW002,ZZW003,ZZW004,ZZW005,ZZW006,ZZW007,ZZW008,ZZW009,ZZW010,ZZW011,ZZW012,ZZW013,ZZW014,ZZW015,ZZW016,ZZW017,ZZW018,ZZW019,ZZW020,ZZW021,ZZW022,ZZW023,ZZW024",
+          "ShelfInnerPositionList": "ZZN001,ZZN002,ZZN003,ZZN004,ZZN005,ZZN006,ZZN007,ZZN008,ZZN009,ZZN010,ZZN011,ZZN012,ZZN013,ZZN014,ZZN015,ZZN016,ZZN017,ZZN018,ZZN019,ZZN020,ZZN021,ZZN022,ZZN023,ZZN024",
+          "TransShelfAgvPositionList": "ZZW001,ZZW002,ZZW003,ZZW004,ZZW005,ZZW006,ZZW007,ZZW008,ZZW009,ZZW010,ZZW011,ZZW012,ZZW013,ZZW014,ZZW015,ZZW016,ZZW017,ZZW018,ZZW019,ZZW020,ZZW021,ZZW022,ZZW023,ZZW024",
+          //"TransShelfInnerPositionList": "082345AA302300,080725AA302300,076890AA302300,075270AA302330,072250AA302360,070660AA302360,066965AA302380,065355AA302380,062485AA302400,060851AA302400,057030AA302300,055418AA302300",
+          "TransShelfInnerPositionList": "Q3N001,Q3N002,Q3N003,Q3N004,Q3N005,Q3N006,Q3N007,Q3N008,Q3N009,Q3N010,Q3N011,Q3N012,Q3N013,Q3N014,Q3N015,Q3N016,Q3N017,Q3N018,Q3N019,Q3N020,Q3N021,Q3N022,Q3N023,Q3N024",
+          "ShelfAgvIdlePositionList": "ZZW001,ZZW002,ZZW003,ZZW004,ZZW005,ZZW006,ZZW007,ZZW008,ZZW009,ZZW010,ZZW011,ZZW012,ZZW013,ZZW014,ZZW015,ZZW016,ZZW017,ZZW018,ZZW019,ZZW020,ZZW021,ZZW022,ZZW023,ZZW024",
+          // "TransShelfIdlePositionList": "082320AA302380,080702AA302380,076870AA302380,075270AA302380,072250AA302360,070660AA302360,066965AA302380,065355AA302380,062485AA302400,060851AA302400,057030AA302300,055418AA302300",
+          "TransShelfIdlePositionList": "Q3N001,Q3N002,Q3N003,Q3N004,Q3N005,Q3N006,Q3N007,Q3N008,Q3N009,Q3N010,Q3N011,Q3N012,Q3N013,Q3N014,Q3N015,Q3N016,Q3N017,Q3N018,Q3N019,Q3N020,Q3N021,Q3N022,Q3N023,Q3N024",
+          "transSpindMiddleAgvPosition": "ZZW001,ZZW002,ZZW003,ZZW004,ZZW005,ZZW006,ZZW007,ZZW008,ZZW009,ZZW010,ZZW011,ZZW012,ZZW013,ZZW014,ZZW015,ZZW016,ZZW017,ZZW018,ZZW019,ZZW020,ZZW021,ZZW022,ZZW023,ZZW024",
+          "ShelfNames": "400001,400002,400003,400004,400005,400006,400007,400008,400009,400010,400011,400012,400013,400014,400015,400016,400017,400018,400019,400020,400021,400022,400023,400024,400025,400026,400027,400028,400029,400030,400031,400032,400033,400034,400035,400036,400037,400038,400039,400040,400041,400042,400043,400044,400045,400046,400047,400048,400049,400050,400051,400052,400053,400054,400055,400056,400057,400058,400059,400060,400061,400062,400063,400064,400065,400066,400067,400068,400069,400070,400071,400072,400073,400074,400075", //料仓
+          "AGVCodes": "565,566,567,568,2187,739,740,741,742,743",
+          "IsSendToKW": true,
+          "IsPcs": true,
+          "ReportFailInternal": 5,
+          "MonitorTaskStatusInterval": 30, //轮询查询海康任务状态间隔
+          "ForkGroup": "WH04",
+          "SyncLocationInterval": "5s",
+          "DelayHikTask": 5000,
+          "IsTransferLocationPageVisible": false,
+          "LineStore": "J03-DR-IN-Schedule", //线边仓
+          "EmptyStore": "J03-DR-IN-Tray,WEIJIAKONGTIOPAN", //空料仓区
+          "ClinkerStore": "J03-DRCP-IN-Schedule", //熟料仓区
+          "FirstStore": "J03-DRCP-IN-Schedule", //熟料仓区
+          "sensorIpGroups": "10.50.32.140", //传感器
+          "RunningQty": 12, //中转位最多同时执行上下料仓，上生料，下熟料的任务数
+          "IsSensorTest": "PanelFork003,PanelFork004", //传感器检测的插齿位
+          "DefaultTimeout": 1200,
+          "PostAndGetTimeout": 120,
+          "GetNextPanelNumberV2": "http://10.50.222.71:8001/v2/central/mes/GetNextPanelNumber",
+          "CallAgvTimeInterval": 3,
+          "AgvEndTimeInterval": 20,
+          "IsStandAlone": false,
+          "GetRackInfo": "http://10.50.222.71:8001/v2/central/mes/GetLocations?deviceId={0}",
+          "CancelSchedule": "http://10.50.222.71:8001/v1/central/schedule/cancelSchedule",
+          "sendTaskToHikAgv": "http://IP:8182/rcms/services/rest/hikRpcService/genAgvSchedulingTask", //给潜伏式AGV派任务
+          "StockInfoQuery": "http://IP:8182/rcms/services/rest/hikRpcService/stockInfoQuery", //查询潜伏式AGV绑定料仓点位
+          "DeviceOnline": "http://localhost:8004/agv/agvCallbackService/online",
+          "GetAgvTask": "http://localhost:8004/agv/agvCallbackService/GetAgvTask", //小车到位
+          //"GetCentralControllTask": "http://10.50.222.71:8001/v2/central/transportation/getTodoTransportations", //向中控请求任务接口
+          "GetCentralControllTask": "http://10.50.222.71:8001/v2/central/transportation/getTasksByPartition?partitions={0}",
+          "BeginReportTask": "http://10.50.222.71:8001/v2/central/transportation/begin", //向中控上传任务运行状态接口
+          "CompleteReportTask": "http://10.50.222.71:8001/v2/central/transportation/complete", //向中控上传完成任务接口
+          "FailReportTask": "http://10.50.222.71:8001/v2/central/transportation/fail", //向中控上传失败任务接口
+          "QueryTaskStatus": "http://IP:8182/rcms/services/rest/hikRpcService/queryTaskStatus", //查询AGV任务状态
+          "CanceleReportTask": "http://10.50.222.71:8001/v2/central/transportation/cancel",
+          "RequestSiloCodes": "http://10.50.222.71:8001/v2/central/mes/QuerySiloCode",
+          "sendToKWUrl": "http://10.50.220.20:8009/Service/EquipmentService.svc/MaterialDistributionNotify",
+          "GetGroupCode": "http://10.50.222.71:8001/v2/central/mes/GetWorkOrderInfo?itemCode={0}",
+          "bindLineSideStock": "http://IP:8182/rcms/services/rest/hikRpcService/bindLineSideStock",
+          "ReportTaskDetail": "http://10.50.222.71:8001/v2/central/transportation/addTransferJobLog",
+          "QuerySilosV2": "http://10.50.224.3:8001/v2/central/mes/QuerySilos",
+          "ReportAGVInfor": "http://10.50.222.71:8001/v2/central/transportation/reportStatus"
+        }
+      }
+    ]
+  }
+}

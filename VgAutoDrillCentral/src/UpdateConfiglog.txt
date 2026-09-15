@@ -1,0 +1,29 @@
+#20231017
+中控
+
+"MysqlTaskSchedulerOptions": {
+    "ConsumingPerSeconds": 5,
+    "PrefetchCount": 5,
+    "Enabled": true,
+    "EnableMes": true,
+    "EnableStrategyByRoute": false
+},
+
+#20231018
+设备端、AgentHub的mqtt配置字节名称修改
+MqttServerConfigurationOptions ==》 MqttServerOptions
+
+#20231019
+设备端，ClickHouseOptions中增加子属性，分别控制各方法是否上报click house
+"PropertiesReportEnabled": false,
+"EventReportEnabled": false,
+"ServiceReportEnabled": false,
+"StatusReportEnabled": false,
+"AlarmReportEnabled": false,
+
+#20231220
+nlog.config,默认需要禁用写入clickhouse，避免在低配服务器上无法运行系统。
+<logger name="*" minlevel="Debug" writeTo="clickhouse_queue" />
+
+#20240927
+Remove 开关配置，EnableStrategyByRoute, EnableUsingSystemPreloadedSchedules

@@ -1,0 +1,125 @@
+﻿using AutoMapper;
+using VgAutoDrill.Admin.Application.Interfaces;
+using VgAutoDrill.Admin.Common.Extensions;
+using VgAutoDrill.Admin.Domain.Interfaces.MesServices;
+using VgAutoDrill.Admin.Model.Entites.Mes;
+using VgAutoDrill.Admin.Model.Enum;
+using VgAutoDrill.Admin.Model.ViewModels;
+using VgAutoDrill.Admin.Model.ViewModels.Mes.MesProcessRecipe;
+
+namespace VgAutoDrill.Admin.Application.Services
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ProcessRecipeService : BaseServiceWithoutTree<MesProcessRecipe, MesProcessRecipeDto, AddOrUpdateMesProcessRecipeReq>, IMesProcessRecipeService
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="domainService"></param>
+        /// <param name="mapper"></param>
+        public ProcessRecipeService(IMesProcessRecipeDomainService domainService, IMapper mapper)
+            : base(domainService, mapper)
+        {
+
+        }
+
+        /// <summary>
+        /// 获取数据列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<ResponseDto<PageDto<MesProcessRecipeDto>>> GetList(GetMesProcessRecipeListReq req)
+        {
+            if (req.PageNum < 1) req.PageNum = 1;
+            if (req.PageSize < 1) req.PageSize = 10;
+            var pageDto = new PageDto<MesProcessRecipeDto>(req.PageNum, req.PageSize);
+
+            var where = PredicateBuilder.True<MesProcessRecipe>();
+            where = where.And(p => p.IsDeleted == 0);
+
+            if (!string.IsNullOrEmpty(req.Code))
+            {
+                where = where.And(p => p.Code.Contains(req.Code));
+            }
+
+            if (!string.IsNullOrEmpty(req.Name))
+            {
+                where = where.And(p => p.Name.Contains(req.Name));
+            }
+
+            if (req.Status > -1)
+            {
+                where = where.And(p => p.Status == req.Status);
+            }
+
+
+
+            var result = await _domainService.QueryPageAsync(where, q => q.Code, SqlSugar.OrderByType.Asc, req.PageNum, req.PageSize);
+
+            pageDto.Total = result.TotalCount;
+            pageDto.List = _mapper.Map<List<MesProcessRecipe>, List<MesProcessRecipeDto>>(result.ToList());
+            return Success<PageDto<MesProcessRecipeDto>>(pageDto);
+        }
+
+        /// <summary>
+        /// 添加信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<ResponseDto<string>> AddData(AddOrUpdateMesProcessRecipeReq req)
+        {
+            if (req == null)
+            {
+                return Fail("信息格式错误!");
+            }
+
+            var isExsitCode = await _domainService.IsExistAsync(p => p.Code == req.Code);
+            if (isExsitCode)
+            {
+                return Fail("已存在相同的编码!");
+            }
+
+            var model = _mapper.Map<MesProcessRecipe>(req);
+            model.CreateTime = DateTime.Now;
+            model.CreatorId = UserId;
+            model.Status = (int)DataStatusEnum.Enable;
+            await _domainService.Add(model);
+            return Success();
+        }
+
+        /// <summary>
+        /// 修改信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<ResponseDto<string>> UpdateData(AddOrUpdateMesProcessRecipeReq req)
+        {
+            if (req == null)
+            {
+                return Fail("信息格式错误!");
+            }
+
+            var entity = await _domainService.QueryByID(req.Id);
+            if (entity == null)
+            {
+                return Fail("信息不存在!");
+            }
+
+            var isExsitCode = await _domainService.IsExistAsync(p => p.Code == req.Code && p.Id != req.Id);
+            if (isExsitCode)
+            {
+                return Fail("已存在相同的编码!");
+            }
+
+            var model = _mapper.Map<MesProcessRecipe>(req);
+            model.CreateTime = entity.CreateTime;
+            model.CreatorId = entity.CreatorId;
+            model.ModifierId = UserId;
+            model.ModifyTime = DateTime.Now;
+            await _domainService.Update(model);
+            return Success();
+        }
+    }
+}

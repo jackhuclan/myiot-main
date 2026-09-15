@@ -1,0 +1,30 @@
+(* SIEB & MEYER AG : OEM-Script File
+(* Version 1
+
+[ScriptNames]
+CncOemScriptNames[ 83]          = scCncOEMBoardDirectionCheck
+
+[ScriptPool]
+CncOemScripts[scCncOEMBoardDirectionCheck]                      = (* start of multiline text
+// What: scCncOEMBoardDirectionCheck
+// Why : ???
+// Who : zhushipeng
+// When: 2024-06-08T11:26:47
+// --------------------------------------------------
+// Revision: 1
+// In:       ???
+// Out:      ???
+// --------------------------------------------------
+//
+//outputDebugString("-- Start of scCncOEMBoardDirectionCheck --");
+
+int i = showDialog(DIALOG_QUESTION,"Please check the direction of the board!","Tip");
+
+Customer.BoardDirectionCheck = i ;
+
+//outputDebugString("-- End   of scCncOEMBoardDirectionCheck --");
+return;
+
+(* end of multiline text
+
+

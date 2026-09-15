@@ -1,0 +1,127 @@
+﻿@page "/dashboard/detail"
+@page "/dashboard/detail/{Id}"
+@inherits ProComponentBase
+
+<MCard>
+    <MCardText>
+        <MRow style="min-height:500px;">
+            <MCol Md="5" Align="AlignTypes.Center">
+                
+                @switch (drill.sWorkMode)
+                {
+                    case "IDLE":
+                        <MImage Contain Src="img/vega-drill/IDLE.jpg" ></MImage>
+                        break;
+                    case "WAIT":
+                        <MImage Contain Src="img/vega-drill/WAIT.jpg" ></MImage>
+                        break;
+                    case "WORK":
+                        <MImage Contain Src="img/vega-drill/WORK.jpg" ></MImage>
+                        break;
+                    case "STOP":
+                        <MImage Contain Src="img/vega-drill/STOP.jpg" ></MImage>
+                        break;
+                    case "ALAM":
+                        <MImage Contain Src="img/vega-drill/ALAM.jpg" ></MImage>
+                        break;
+                    case "SERV":
+                        <MImage Contain Src="img/vega-drill/SERV.jpg" ></MImage>
+                        break;
+                    default:
+                        <MImage Contain Src="img/vega-drill/OFFLINE.jpg" ></MImage>
+                        break;
+                }
+            </MCol>
+            <MCol Md="7" class="d-flex flex-column pa-12 pl-0">
+                <div class="mb-6">
+                    <h4 class="neutral-lighten-1--text">&ensp;&emsp;</h4>
+                    <h4 class="neutral-lighten-1--text">机台状态：@drill.sWorkMode</h4>
+                    <h5 class="neutral-lighten-1--text">设备编号：@drill.sEquipmentID</h5><h6 class="neutral-lighten-1--text">&ensp;&emsp;</h6>
+                    <p class="text-body2 neutral-lighten-4--text mb-0">钻孔进度<span class="text-body2 sample-green--text ml-2">@drill.sDrilled / @drill.sNeeded</span></p>
+                </div>
+                <div class="mb-6">
+                    <p class="mb-0 text-body2"> 推荐指数</p>
+                    <MRating Readonly Value="5" Size=20 Color="remind" BackgroundColor="remind" Dense></MRating>
+                    <h6 class="neutral--text">稼动率：@drill.sDuty</h6>
+                </div>
+                <p class="mb-6 text-body3 justify-text-align">
+                    钻带程序：@drill.sActProgram
+                </p>
+                <p class="mb-6 text-body3 justify-text-align">
+                    参数程序：@drill.sDiaFileName
+                </p>
+            </MCol>
+        </MRow>
+    </MCardText>
+</MCard>
+
+<MRow class="mt-6">
+    <MCol Md="4" Align="AlignTypes.Center" class="pa-15 d-flex flex-column align-center">
+        <MIcon class="primary--text">mdi-crown</MIcon>
+        <h5 class="neutral-lighten-1--text mt-2 mb-2"> 德国技术 </h5>
+        <p class="text-center text-body neutral-lighten-3--text"> 德国SIEB&MEYER CNC 84/ 82 95/ 93 控制系统 </p>
+    </MCol>
+    <MCol Md="4" Align="AlignTypes.Center" class="pa-15 d-flex flex-column align-center">
+        <MIcon class="primary--text">mdi-water</MIcon>
+        <h5 class="neutral-lighten-1--text mt-2 mb-2"> 超大台面 </h5>
+        <p class="text-center text-body neutral-lighten-3--text"> 大台面加工尺寸25"×30"，可定制2轴、6轴超大台面加工尺寸25"×43" </p>
+    </MCol>
+    <MCol Md="4" Align="AlignTypes.Center" class="pa-15 d-flex flex-column align-center">
+        <MIcon class="primary--text">mdi-cast-connected</MIcon>
+        <h5 class="neutral-lighten-1--text mt-2 mb-2"> 智能加工 </h5>
+        <p class="text-center text-body neutral-lighten-3--text"> Two Pin 多层板加工技术 </p>
+    </MCol>
+</MRow>
+<MRow class="mt-6">
+    <MSheet Class="mx-auto full-width transparent">
+        <h5 class="text-center neutral-lighten-1--text">相关产品</h5>
+        <p class="text-center text-body neutral-lighten-3--text mb-0">用户还搜索了其他产品</p>
+        <MSlideGroup ShowArrows="@(true)" class="mt-6 relate-group">
+            @foreach (var item in drillList)
+            {
+                <a class="pb-3">
+                    <MSlideItem>
+                        <MHover Context="hoverContext">
+                            <MCard @attributes="hoverContext.Attrs" Elevation="@(hoverContext.Hover ? 6 : 0)" RefBack="@context.Ref" Color="@("#f8f8f8")" class="ma-3 white" Height="428" Width="333" Click="@context.Toggle">
+
+                                @switch (item.sWorkMode)
+                                {
+                                    case "IDLE":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/IDLE.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    case "WAIT":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/WAIT.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    case "WORK":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/WORK.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    case "STOP":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/STOP.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    case "ALAM":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/ALAM.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    case "SERV":
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/SERV.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                    default:
+                                        <MImage Height=333 Width=333 Contain Src="img/vega-drill/OFFLINE.jpg" Class="hover-pointer" ></MImage>
+                                        break;
+                                }
+                                <MDivider />
+                                <MCardText class="pa-3">
+                                    <div class="d-flex justify-space-between">
+                                        <MRating Value="5" Size=20 Dense Readonly Length=5 Color="remind" BackgroundColor="remind"></MRating>
+                                        <h6>稼动率: @item.sDuty %</h6>
+                                    </div>
+                                    <div class="text-subtitle text-truncate">设备编号：@item.sEquipmentID</div>
+                                    <div class="text-truncate text-body3 neutral-lighten-3--text">设备状态：@item.sWorkMode</div>
+                                </MCardText>
+                            </MCard>
+                        </MHover>
+                    </MSlideItem>
+                </a>
+            }
+        </MSlideGroup>
+    </MSheet>
+</MRow>

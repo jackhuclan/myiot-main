@@ -1,0 +1,24 @@
+﻿@page "/"
+@inject IConfiguration configuration
+<PageTitle>@Title</PageTitle>
+
+<DynamicComponent Type="@componentType" />
+
+@code {
+    private Type componentType = typeof(VgAutoDrill.Agent.JinLu.Components.DefaultAGV);
+    private string Title = "Auto Drill 调度系统";
+    private Dictionary<string, Type> renderComponents = new Dictionary<string, Type>()
+    {
+        {"MockDrill",typeof(VgAutoDrill.Agent.JinLu.Components.MockDrill) },
+        {"MockAGV",typeof(VgAutoDrill.Agent.JinLu.Components.MockAGV) },        
+        {"DefaultAGV",typeof(VgAutoDrill.Agent.JinLu.Components.DefaultAGV) },
+        {"FrontDrill1ParkingPageTemp",typeof(VgAutoDrill.Agent.JinLu.Components.FrontDrill1ParkingPageTemp) },
+    };
+
+    protected override void OnInitialized()
+    {
+        string? deviceType = configuration.GetValue<string>("PageController");
+        renderComponents.TryGetValue(deviceType, out componentType);
+        Title = $"Auto Drill 调度系统-{componentType.Name}";
+    }
+}

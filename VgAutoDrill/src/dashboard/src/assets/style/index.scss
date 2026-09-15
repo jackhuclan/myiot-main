@@ -1,0 +1,411 @@
+@import "./common.scss";
+@import "./global.scss";
+.host-body {
+  height: 100%;
+}
+
+//页面样式部分！！！！
+#index {
+  color: #fff;
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: left top;
+  overflow: hidden;
+  .bg {
+    //整体页面背景
+    width: 100%;
+    height: 100%;
+    padding: 16px 16px 0 16px;
+    // background-image: url("@/assets/img/pageBg.png"); //背景图
+    background-image: url("@/assets/img/bg03.gif"); //背景图
+    background-size: cover; //背景尺寸
+    background-position: center center; //背景位置
+  }
+  // // 头部背景图
+  // .header_bg {
+  //   background-image: url("@/assets/img/bg2.png");
+  //   background-size: cover; //背景尺寸
+  //   background-position: center center; //背景位置
+  // }
+  // //顶部右边装饰效果
+  // .title_right {
+  //   width: 100%;
+  //   height: 50px;
+  //   position: absolute;
+  //   left: 0;
+  //   top: 18px;
+  // }
+  // // 顶部左边装饰效果
+  // .title_left {
+  //   width: 100%;
+  //   height: 50px;
+  //   margin-top: 18px;
+  // }
+  // //顶部中间装饰效果
+  // .title_center {
+  //   width: 100%;
+  //   height: 50px;
+  // }
+  //顶部中间文字维嘉智能钻孔车间
+  // .title_text {
+  //   img {
+  //     height: 22px;
+  //     margin-right: 5px;
+  //     vertical-align: middle;
+  //   }
+  //   text-align: center;
+  //   font-size: 24px;
+  //   font-weight: bold;
+  //   margin-top: 12px;
+  //   color: #008cff;
+  // }
+  // .time_box {
+  //   position: relative;
+  // }
+  // //时间日期
+  // .title_time {
+  //   height: 40px;
+  //   width: 100%;
+  //   position: absolute;
+  //   left: -20px;
+  //   top: -5px;
+  //   display: flex;
+  //   align-items: center;
+  //   justify-content: center;
+  //   p {
+  //     font-family: YouSheBiaoTiHei !important;
+  //     font-size: 17px;
+  //     font-weight: 400;
+  //     color: #05e8fe;
+  //     white-space: nowrap;
+  //     width: 200px;
+  //   }
+  // }
+  // // 返回首页按钮
+  // .title_right_button {
+  //   position: absolute;
+  //   right: 80px;
+  //   font-size: 20px;
+  //   color: #fff;
+  //   border: none;
+  //   background: transparent;
+  //   z-index: 999;
+  // }
+  // .title_right_button1 {
+  //   position: absolute;
+  //   right: 50px;
+  //   font-size: 22px;
+  //   color: #fff;
+  //   border: none;
+  //   background: transparent;
+  //   z-index: 999;
+  // }
+
+  // // 左上角
+  // .left_top {
+  //   position: relative;
+  // }
+  // // 左上角设备按钮
+  // .left_btn_box {
+  //   height: 40px;
+  //   position: absolute;
+  //   left: 30px;
+  //   top: -10px;
+  //   display: flex;
+  //   align-items: center;
+  //   z-index: 999;
+  //   span {
+  //     // 鼠标样式
+  //     cursor: pointer;
+  //     display: flex;
+  //     align-items: center;
+  //     justify-content: center;
+  //     width: 100px;
+  //     height: 30px;
+  //     font-size: 18px;
+  //     margin: 0 5px;
+  //     background-image: url("@/assets/img/btn.png");
+  //     background-size: 100% 100%; //背景尺寸
+  //     background-position: center center; //背景位置
+  //   }
+  // }
+  // // 设备统计模块更多按钮
+  // .all_btn {
+  //   font-size: 20px !important;
+  //   border: none !important;
+  //   background: transparent !important;
+  //   font-weight: bold !important;
+  //   letter-spacing: 0.2rem !important;
+  //   color: #fff;
+  // }
+}
+
+// //小模块
+// .left_box {
+//   width: 100%;
+//   height: 50%;
+//   margin-bottom: 10px;
+// }
+// 模块内标题
+.title {
+  padding-bottom: 15px;
+  font-size: 20px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: bold;
+  letter-spacing: 0.2rem;
+}
+// //中间折线图
+// .line_center {
+//   width: 100%;
+//   height: 300px;
+// }
+//折线图
+#line_center_diagram {
+  height: 100%;
+  width: 100%;
+  color: #fff;
+}
+
+// 中间模块标题
+.center_title {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+}
+
+// // 左1图片
+// .left_img {
+//   width: 100%;
+//   height: 150px;
+//   display: block;
+//   margin: 0 auto;
+//   margin-bottom: 10px;
+// }
+// // 左1介绍
+// .VGdesc {
+//   text-indent: 2em;
+//   line-height: 25px;
+// }
+//轮播表格
+.carousel_list {
+  width: 100%;
+  height: calc(100% - 40px);
+}
+
+// //设备统计下的设备
+// .device_item {
+//   width: 100%;
+//   display: flex;
+//   flex-direction: column;
+//   margin-bottom: 10px;
+//   li {
+//     height: 30px;
+//     align-items: center;
+//     width: 100%;
+//     display: flex;
+//     justify-content: space-between;
+//     font-size: 18px;
+//   }
+// }
+// // 中间部分
+// .center_box {
+//   width: 100%;
+//   padding-top: 5px;
+//   /* 声明一个容器 */
+//   display: grid;
+//   /*  声明列的宽度  */
+//   grid-template-columns: 40% 58%;
+//   /*  声明行间距和列间距  */
+//   grid-gap: 11px;
+//   /*  声明行的高度  */
+//   grid-template-rows: 320px 315px;
+// }
+// .center_two {
+//   height: 645px;
+//   margin-left: 5px;
+//   width: 100%;
+// }
+
+// // 生产量情况
+// .gauge_box {
+//   margin: 20px 0;
+//   width: 100%;
+//   height: 180px;
+//   display: flex;
+//   .gauge {
+//     width: 50%;
+//   }
+//   li {
+//     height: 100%;
+//     width: 50%;
+//     display: flex;
+//     flex-direction: column;
+//     align-items: center;
+//     justify-content: center;
+//     font-size: 20px;
+//     p {
+//       width: 100%;
+//       padding: 0 20px;
+//       height: 60px;
+//       display: flex;
+//       align-items: center;
+//       justify-content: space-between;
+//     }
+//   }
+// }
+
+// // 任务统计水位图
+// .round_box {
+//   width: 100%;
+//   display: flex;
+//   align-items: center;
+//   justify-content: space-around;
+//   margin-top: 30px;
+//   li {
+//     display: flex;
+//     flex-direction: column;
+//     width: 50%;
+//     align-items: center;
+//     p {
+//       font-size: 22px;
+//     }
+//   }
+// }
+// // 车间图片
+// .workshop_img {
+//   width: 100%;
+//   display: block;
+//   // margin-top: 20px;
+// }
+
+// // 工单统计模块
+// .pie_box {
+//   width: 100%;
+//   height: 280px;
+//   position: relative;
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   .gauge {
+//     position: absolute;
+//     left: 0;
+//     top: 0;
+//     width: 100%;
+//     height: 100%;
+//   }
+// }
+
+// 修改轮播表表头字体大小
+.dv-scroll-board {
+  .header-item {
+    font-size: 18px !important;
+    text-align: center;
+    white-space: nowrap;
+    // color: #fff !important;
+  }
+  .rows {
+    .row-item {
+      background: url("@/assets/img/bgmini.jpg") no-repeat center center !important ;
+      background-size: 100% 88% !important;
+    }
+  }
+}
+// // device_detail页面
+// .device_detail_img {
+//   width: 100%;
+//   height: 950px;
+// }
+// .detail_center {
+//   width: 100%;
+// }
+// .device_header {
+//   margin-bottom: 10px;
+//   .header_box {
+//     padding-top: 5px;
+//     height: 40px;
+//     display: flex;
+//     align-items: center;
+//     .item {
+//       margin: 0 10px;
+//       p {
+//         font-size: 16px;
+//         padding: 0 10px;
+//       }
+//     }
+//     .item p:hover {
+//       cursor: pointer;
+//     }
+//   }
+// }
+// .device_box {
+//   width: 100%;
+//   height: 90%;
+//   overflow-y: auto;
+//   // 详情页图片
+//   .device_content {
+//     height: 95%;
+//     padding-bottom: 20px;
+//     /* 声明一个容器 */
+//     display: grid;
+//     /*  声明列的宽度  */
+//     grid-template-columns: repeat(5, 19.5%);
+//     /*  声明行高  */
+//     grid-template-rows: 50%;
+//     /*  声明行间距和列间距  */
+//     grid-gap: 10px;
+//     .device_item {
+//       border: #008cff 1px solid;
+//       padding: 15px;
+//       display: flex;
+//       flex-direction: column;
+//       align-items: center;
+//       justify-content: center;
+//       img {
+//         width: 100%;
+//         height: 240px;
+//         background: #fff;
+//       }
+//       .device_desc {
+//         margin-top: 20px;
+//         width: 100%;
+//         display: flex;
+//         align-items: center;
+//         font-size: 20px;
+//         height: 20px;
+//       }
+//       .item {
+//         width: 100%;
+//         height: 20px;
+//         margin-top: 20px;
+//       }
+//       .status {
+//         width: 100%;
+//         height: 40px;
+//         display: flex;
+//         align-items: center;
+//         justify-content: space-between;
+//         margin-top: 20px;
+//         span {
+//           background: orange;
+//           height: 100%;
+//           width: 70px;
+//           text-align: center;
+//           line-height: 40px;
+//         }
+//       }
+//     }
+//   }
+// }
+.el-carousel {
+  height: 100% !important;
+}
+.el-carousel__indicators {
+  bottom: 25px !important;
+}

@@ -1,0 +1,16 @@
+{
+    "PluginSetupOptions": [
+        {
+            "PluginDirectory": ".",
+            "AssemblyFileName": "UnitTest.VgAutoDrill.Infrastructure.dll",
+            "PluginName": "FakePluginSetup",
+            "Enabled": true
+        },
+        {
+            "PluginDirectory": ".",
+            "AssemblyFileName": "UnitTest.VgAutoDrill.Infrastructure.dll",
+            "PluginName": "FakePluginSetup2",
+            "Enabled": true
+        }
+    ]
+}

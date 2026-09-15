@@ -1,0 +1,27 @@
+(* SIEB & MEYER AG : Customer-Script File
+(* Version 1
+
+[ScriptNames]
+CncCustomerScriptNames[ 28]     = scCncCUSTOMERBoardDirectionCheck
+
+[ScriptPool]
+CncCustomerScripts[scCncCUSTOMERBoardDirectionCheck]            = (* start of multiline text
+// What: scCncCUSTOMERBoardDirectionCheck
+// Why : ???
+// Who : hanyan
+// When: 2024-06-26T10:07:13
+// --------------------------------------------------
+// Revision: 1
+// In:       ???
+// Out:      ???
+// --------------------------------------------------
+//
+if ( UF.BoardDirectionCheck == true  ) then  
+begin   
+      showDialog( DIALOG_INFORMATION, gsBoardDirectionCheck );    
+end  
+
+return;
+(* end of multiline text
+
+

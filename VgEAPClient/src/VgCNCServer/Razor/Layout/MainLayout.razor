@@ -1,0 +1,61 @@
+﻿@inherits LayoutComponentBase
+@inject GlobalConfig GlobalConfig
+
+<MApp>
+    <PPageTabsProvider>
+        <CascadingValue Value="GlobalConfig.Culture.Name" Name="CultureName">
+            <MAppBar Elevation=0 App Height="40" Class="default-app-bar mx-6">
+                <div class="default-app-bar__nav @PageModeClass">
+                    <PageTabs @ref="_pageTabs" SelfPatterns="@s_selfPatterns" />
+                    <Language OnLanguageChanged="OnLanguageChanged" />
+                    @* <Login /> *@
+                </div>
+
+            </MAppBar>
+
+            <Navigation />
+
+            <MMain Class="fill-lighten-1">
+                <div class="pa-6">
+                    <PPageContainer PageTabs="@_pageTabs?.PPageTabs" SelfPatterns="@s_selfPatterns">
+                            @Body
+                    </PPageContainer>
+                </div>
+            </MMain>
+        </CascadingValue>
+    </PPageTabsProvider>
+</MApp>
+
+@code {
+
+    private static readonly string[] s_selfPatterns =
+    [
+        "/app/todo"
+    ];
+
+    private PageTabs? _pageTabs;
+
+    private string PageModeClass => "page-mode--tab" ;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await GlobalConfig.InitFromStorage();
+            StateHasChanged();
+        }
+    }
+
+    void OnLanguageChanged(CultureInfo culture)
+    {
+        GlobalConfig.Culture = culture;
+    }
+
+}

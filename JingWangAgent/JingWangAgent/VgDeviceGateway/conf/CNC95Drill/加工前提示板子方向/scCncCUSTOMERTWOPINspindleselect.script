@@ -1,0 +1,95 @@
+(* SIEB & MEYER AG : Customer-Script File
+(* Version 1
+
+[ScriptNames]
+CncCustomerScriptNames[ 26]     = scCncCUSTOMERTWOPINspindleselect
+
+[ScriptPool]
+CncCustomerScripts[scCncCUSTOMERTWOPINspindleselect]            = (* start of multiline text
+// What: scCncCUSTOMERTWOPINspindleselect
+// Why : ???
+// Who : VEGA
+// When: 2023-08-21T18:50:31
+// --------------------------------------------------
+// Revision: 1
+// In:       ???
+// Out:      ???
+// --------------------------------------------------
+int i; 
+int spindle1on;
+int spindle2on;
+int spindle3on;
+int spindle4on;
+int spindle5on;
+int spindle6on;
+int spindle7on;
+int spindle8on;
+int spindle9on;
+int spindle10on;
+int spindle11on;
+int spindle12on;
+int spindleallon;
+giMeasureMask = CurrentMachineSpindleSelect;
+int   iSpindleNumber; 
+bool  bToolInSpindle = false;
+
+if ( checkInputHigh(In.PositionStop)) then
+begin    
+   return;   
+end
+
+for ( iSpindleNumber = 1 to WS.NUMBER )  do
+   begin
+      if (( getToolInSpindle( iSpindleNumber ) != 0 ) and ( isSpindleSelected( iSpindleNumber ) )) then
+      begin
+         bToolInSpindle = true;
+      end
+   end
+   
+   if ( bToolInSpindle ) then
+   begin
+      laydownToolToMagazin();
+   end
+   
+for (i = 1 to WS.NUMBER) do
+      begin 
+         if ( giMeasureMask & ( 0b1 << ( i-1 ) ) )then
+         begin                                            
+            if (  i == 2 ) then
+            begin
+               spindle2on=2;                       
+            end
+            if (  i == 4) then 
+            begin
+               spindle4on=8;    
+            end
+            if (  i == 6 ) then            
+            begin
+               spindle6on=32;               
+            end
+            if (  i == 8) then  
+            begin     
+               spindle8on=128;    
+            end
+            if (  i == 10) then             
+            begin
+               spindle10on=512;    
+            end
+            if (  i == 12) then             
+            begin
+               spindle12on=2048;             
+            end
+          end
+      end  
+spindleallon=(spindle2on | spindle4on | spindle6on | spindle8on | spindle10on | spindle12on);     
+TempWorkingStationSelectMask= CurrentMachineSpindleSelect-spindleallon;
+callScript(scSMChangeWorkingstationSelection);   
+wait(1000);                  
+callScript( scCncCUSTOMERTwoPin );
+TempWorkingStationSelectMask= CurrentMachineSpindleSelect+spindleallon;
+callScript(scSMChangeWorkingstationSelection);   
+wait(1000);    
+ return;
+(* end of multiline text
+
+

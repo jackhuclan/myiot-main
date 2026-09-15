@@ -1,0 +1,671 @@
+﻿@using System.Text.Json;
+@using System.ComponentModel;
+@using Microsoft.Extensions.Options;
+@using VgAutoDrill.OpenAPI
+@using VgDeviceGateway.Devices;
+@using VgAutoDrill.Fundation.Iot;
+@using VgAutoDrill.Fundation.Iot.Configuration;
+@using VgAutoDrill.Fundation.Iot.Models;
+@using VgAutoDrill.Fundation.Mqtt;
+@using VgAutoDrill.Fundation.Utils;
+@using VgDeviceGateway.Devices.Agv;
+@using VgDeviceGateway.Devices.Common;
+@using VgDeviceGateway.Devices.Common.Agv;
+
+
+@inject ILogger<DefaultAgv> logger
+@inject IDeviceProvider deviceProvider
+@inject IJSRuntime JSRuntime;
+@inject IHttpRequestInvoker httpRequestInvoker;
+@inject IOptions<CentralWebOptions> options;
+@inject IConfiguration configuration
+
+<h3>
+    @agv.DeviceId - @agv.DeviceName
+    <div id="status" style="width:30px;height:30px;display:inline-block;background:url(/images/machine.png);background-size:cover;"></div>
+</h3>
+
+<EditForm Model="@currentContext">
+
+    <p>
+        <button @onclick="QueryExternalMaterial">
+            查询料仓信息
+        </button>
+        <button @onclick="QueryProperties">
+            查看属性信息
+        </button>
+        <button @onclick="ClearExternalMaterial">
+            清空料仓（有料仓 没有料）
+        </button>
+        <button @onclick="RemoveSilo">
+            移除料仓（没有料仓）
+        </button>
+        <button @onclick="ToFullSilo">
+            手动满料仓状态
+        </button>
+        <button @onclick="SearchActionStatus">
+            查看Action状态
+        </button>
+        <button @onclick="UpdateDone">
+            修改为Done，很重要请慎用
+        </button>
+
+        <button @onclick="SearchStatus">
+            查看设备状态
+        </button>
+    </p>
+    <p>
+        <button @onclick="ResetDeviceStatus">
+            设备状态重置
+        </button>
+        <button @onclick="ToException">
+            终止设备
+        </button>
+        <button @onclick="SearchTask">
+            查询任务
+        </button>
+    </p>
+    <p>
+        <table>
+            <tr>
+                <td><label>请输入起始层</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.StartLayer>
+                        @for (var i = 0; i < agv.DeviceDescriptor.LayerLimit.ToInt(); i++)
+                        {
+                            <option value="@i">@(i + 1)层</option>
+                        }
+                    </InputSelect>
+                </td>
+
+            </tr>
+            <tr>
+                <td><label>板料类型</label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.PanelType>
+                        <option value="0">空</option>
+                        <option value="1">生料</option>
+                        <option value="2">熟料</option>
+                        <option value="3">已上pin</option>
+                        <option value="4">待下pin</option>
+                    </InputSelect>
+                </td>
+            </tr>
+            <tr>
+                <td><label>请输入物料代码</label></td>
+                <td>
+                    <InputSelect @bind-Value="currentContext.ItemCode" style="width:100%;">
+                        <option value="">请选择物料代码</option> <!-- 默认空选项 -->
+                        @if (agv.MaterialModels != null)
+                        {
+                            @foreach (var rh in agv.MaterialModels)
+                            {
+                                <option value="@rh.Code">@rh.Code</option>
+                            }
+                        }
+                    </InputSelect>
+                </td>
+                <td style="margin-left:-10px; color:blue;font-size:30px" align="right"><label>模糊匹配: </label></td>
+                <td> <InputText @bind-Value=@currentContext.MaterialMatchCode></InputText></td>
+                <td style="color:blue;font-size:30px" align="left"><label>排序: </label></td>
+                <td>
+                    <InputSelect @bind-Value=@currentContext.ItemOrder>
+                        <option value="2" selected>按创建时间倒序</option>
+                        <option value="3">按物料代码正序</option>
+                        <option value="4">按物料代码倒序</option>
+                    </InputSelect>
+                </td>
+                <td>
+                    <button @onclick="ReloadMaterialCodes" style="background-color:#C0C0C0">
+                        刷新物料
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>装载到AGV的生料Panel数量</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.RawPanelCount></InputNumber>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>装载到AGV的料仓编号</label>
+                </td>
+                <td>
+                    @* <InputText @bind-Value=@currentContext.SiloCode></InputText> *@
+                    <InputSelect @bind-Value="currentContext.SiloCode" style="width:100%;">
+                        @foreach (var siloCode in agv.SiloCodes)
+                        {
+                            <option value="@siloCode">@siloCode </option>
+                        }
+                    </InputSelect>
+                </td>
+                <td style="padding-left:10px" align="right">
+                    <label>料仓匹配:</label>
+                </td>
+                <td><InputText @bind-Value="currentContext.SiloMatch" style="width:100%;"></InputText></td>
+                <td style="padding-left:5px">
+                    <button @onclick="ReloadSiloCodes">
+                        更新料仓编号
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>板料每叠片数</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PanelPcs></InputNumber>
+                </td>
+                <td>
+                    <p>请输入没叠片数</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>板料宽度</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PanelWidth></InputNumber>
+                </td>
+                <td>
+                    <p>请输入低于625的值</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>板料长度</label>
+                </td>
+                <td>
+                    <InputNumber @bind-Value=@currentContext.PanelLength></InputNumber>
+                </td>
+                <td>
+                    <p>请输入低于999的值</p>
+                </td>
+            </tr>
+        </table>
+
+        <button @onclick="LoadExternalMaterial">
+            加载料仓信息
+        </button>
+
+
+        <button @onclick="AgvToReady">
+            Agv准备就绪
+        </button>
+    </p>
+    <p>
+        <table>
+            <tr>
+                <td><label>请输入移动的点位</label></td>
+                <td>
+                    <InputText @bind-Value=@currentContext.ToMovePos></InputText>
+                </td>
+                <td>
+                    <p>休息点位：@agv.DeviceDescriptor.Extra["RestingPoints"].ToStr()</p>
+                </td>
+                <td>
+                    <button @onclick="MoveToPos">
+                        确认移动
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td><label>PLC点位 :</label></td>
+                <td>
+                    <InputText @bind-Value=@currentContext.PlcPoint></InputText>
+                </td>
+                <td><label>PLC 地址位数 :</label></td>
+                <td>
+                    <InputText @bind-Value=@currentContext.PlcLength></InputText>
+                </td>
+                <td>
+                    <button @onclick="ReadPlc">
+                        读取
+                    </button>
+                </td>
+                <td><label>写入值 :</label></td>
+                <td>
+                    <InputText @bind-Value=@currentContext.PlcValue></InputText>
+                </td>
+                <td>
+                    <button @onclick="WritePlc">
+                        写入
+                    </button>
+                </td>
+            </tr>
+        </table>
+    </p>
+    <p>当前信息</p>
+    <p @ref="messageElement">@currentContext.Message</p>
+</EditForm>
+
+@code {
+    private ElementReference messageElement;
+    private CentralWebOptions centralWebOptions;
+    private List<MaterialModel> _rhModel;
+    private List<string> SiloCodes { get; set; } = new List<string>() { "" };
+    public class PostionAndDevice
+    {
+        public string pos { get; set; }
+        public string Device { get; set; }
+        public string DeviceId { get; set; }
+        public string ProductId { get; set; }
+        public string ClientId { get; set; }
+    }
+    DefaultAgv? agv;
+    public class CurrentContext
+    {
+        public string Pos = "2";
+
+        public string ItemCode { get; set; } = "";
+        public string SiloCode { get; set; } = "";
+        public string SiloMatch { get; set; }
+        public string Message { get; set; } = "";
+        public int ItemOrder { get; set; } = 2;//2-按创建时间倒序、3-按物料代码正序、4-按物料代码倒序 QueryOrderByEnum.OrderByCreateTimeDesc
+
+        public string MaterialMatchCode { get; set; } = "";
+        public string UpdateProperties { get; set; } = "";
+        public string UpdateValue { get; set; }
+
+        public string ToMovePos = "";
+
+        public string TaskId = "";
+
+        public int StartLayer { get; set; } = 0;
+        public int EndLayer { get; set; } = 1;
+        public int PanelType { get; set; } = 1;//0空  1生料 2熟料
+
+        public List<PostionAndDevice> positionAndDevices { get; set; } = new List<PostionAndDevice>();
+
+        /// <summary>
+        /// 装载到AGV的生料Panel数量
+        /// </summary>
+        public int RawPanelCount { get; set; } = 15;
+        public int LoadPanelCount { get; set; } = 5;
+        public int UnloadPanelCount { get; set; } = 5;
+        public int PanelPcs { get; set; } = 0;
+        public float PanelWidth { get; set; } = 622f;
+        public float PanelLength { get; set; } = 1244f;
+        public float PinOffset { get; set; } = 3.2f;
+        public PostionAndDevice GetTargetDevice()
+        {
+            return positionAndDevices.FirstOrDefault(a => a.pos == Pos);
+        }
+
+        public string PlcPoint { get; set; }
+        public string PlcValue { get; set; }
+        public string PlcLength{ get; set; }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        //currentContext.RawPanelCount = agv.DeviceDescriptor.LayerLimit.ToInt();
+
+    }
+
+    private CurrentContext currentContext = new CurrentContext
+        {
+            positionAndDevices = new List<PostionAndDevice>
+            {
+                new PostionAndDevice { pos = "2", Device = "充电桩" },
+                new PostionAndDevice { pos = "11", Device = "钻机0001", DeviceId = "drill001", ProductId = "drill" },
+                new PostionAndDevice { pos = "12", Device = "钻机0002", DeviceId = "drill002", ProductId = "drill" },
+                new PostionAndDevice { pos = "15", Device = "暂存台" },
+                new PostionAndDevice { pos = "12", Device = "12" },
+                new PostionAndDevice { pos = "6", Device = "6" }
+            }
+        };
+
+    protected override async void OnInitialized()
+    {
+        // if (currentContext == null)
+        // {
+        // 	currentContext = new ContextModel();
+        // }
+
+        // if (agv.MaterialModels == null)
+        // {
+        // 	agv.MaterialModels = new List<MaterialModel>();
+        // }
+
+        var deviceId = configuration.GetValue<string>("PageMasterDeviceId");
+        agv = deviceProvider.GetDevice(deviceId) as DefaultAgv;
+        centralWebOptions = options.Value;
+        _rhModel = agv.MaterialModels;
+        currentContext.RawPanelCount = agv.DeviceDescriptor.LayerLimit.ToInt();
+    }
+
+
+    private void Show(bool res)
+    {
+        if (res)
+        {
+            this.JSRuntime.InvokeVoidAsync("success");
+        }
+        else
+        {
+            this.JSRuntime.InvokeVoidAsync("fail");
+        }
+    }
+
+    private async void OutputMessage(string message, bool reset = false)
+    {
+        if (reset) currentContext.Message = $"{message}--{DateTime.Now.ToLocalTime()}";
+        else currentContext.Message = $"{currentContext.Message}{Environment.NewLine}{message}--{DateTime.Now.ToLocalTime()}";
+
+        await this.JSRuntime.InvokeVoidAsync("setElementText1", messageElement, currentContext.Message);
+    }
+
+    private async void LoadExternalMaterial()
+    {
+        if (agv.Status == DeviceStatus.Working)
+        {
+            OutputMessage($"AGV 当前正在执行任务，请稍后再设置", true);
+            return;
+        }
+        AgvPageEntity agvPageEntity = new AgvPageEntity();
+        agvPageEntity.AgvId = string.Empty;
+        agvPageEntity.AgvName = string.Empty;
+        agvPageEntity.MaterialCode = currentContext.ItemCode;
+        agvPageEntity.LoadMaterialType = currentContext.PanelType;
+        agvPageEntity.StartLayer = currentContext.StartLayer;
+        agvPageEntity.LoadLayerCount = currentContext.RawPanelCount;
+        agvPageEntity.PanelWidth = currentContext.PanelWidth;
+        agvPageEntity.PanelLength = currentContext.PanelLength;
+        agvPageEntity.PinOffset = currentContext.PinOffset;
+        agvPageEntity.SiloCode = currentContext.SiloCode;
+        agvPageEntity.PanelPcs = currentContext.PanelPcs;
+
+        var loadResult = await agv.LoadExternalMaterial(agvPageEntity);
+        if (!loadResult.Item1)
+        {
+            OutputMessage($"加载失败:{loadResult.Item1}_失败信息:{loadResult.Item2}", true);
+            return;
+        }
+
+        var response = await agv.ReportStatus();
+        if (response.Code != ErrorCodes.Sys.SUCCESS)
+        {
+            OutputMessage("上报状态失败,请检查网络", true);
+            Show(false);
+        }
+        else
+        {
+            var updateisaotu = await agv.WriteProperties(new DeviceServiceInvokeRequest
+                {
+                    ProductId = agv.ProductId,
+                    DeviceId = agv.DeviceId,
+                    ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                    Params = new Dictionary<string, object?>
+                            {
+                                {"IsAuto",false }
+                            }
+                });
+            QueryExternalMaterial();
+            agv.setNewPanelLog(agvPageEntity);
+        }
+    }
+
+    private async Task ReloadSiloCodes()
+    {
+        if (SiloCodes == null)
+            SiloCodes = new List<string>();
+        else
+            SiloCodes.Clear();
+        SiloCodes.Add("");
+
+        var siloCodes = await agv.GetSiloCodeAsync(currentContext.SiloMatch);
+        SiloCodes.AddRange(siloCodes);
+        agv.SiloCodes = SiloCodes;
+        OutputMessage("更新料仓编码成功", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+    private void QueryExternalMaterial()
+    {
+        var allstr = agv.QueryExternalMaterial();
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private async void ClearExternalMaterial()
+    {
+        if (agv.Status == DeviceStatus.Working)
+        {
+            OutputMessage($"AGV 当前正在执行任务，请稍后再设置", true);
+            return;
+        }
+        var allstr = agv.ClearExternalMaterial();
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private async void SearchActionStatus()
+    {
+        var aaa = agv.MoveActionStatus;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+    private async void UpdateDone()
+    {
+        agv.MoveActionStatus = AgvMoveActionStatus.Done;
+        var aaa = agv.MoveActionStatus;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+    private async void UpdateDoing()
+    {
+        agv.MoveActionStatus = AgvMoveActionStatus.Doing;
+        var aaa = agv.MoveActionStatus;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+
+    private void QueryProperties()
+    {
+        var aaa = agv.WatchingProperties.GetValues();
+        var allstr = "";
+        foreach (var item in aaa)
+        {
+            allstr += $"{item.Key}:{item.Value}" + Environment.NewLine;
+        }
+        OutputMessage(allstr, true);
+        Show(true);
+    }
+
+    private async void SearchStatus()
+    {
+        var aaa = agv.Status;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+    private async void SearchTask()
+    {
+        var aaa = agv.SearchTask();
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+
+    private async void UpdateReady()
+    {
+        agv.Status = DeviceStatus.Ready;
+        var aaa = agv.Status;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+    private async void UpdateWorking()
+    {
+        agv.Status = DeviceStatus.Working;
+        var aaa = agv.Status;
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+
+    private async void ToUpdateProperties()
+    {
+        var propertie = currentContext.UpdateProperties;
+        var value = currentContext.UpdateValue;
+        var response = await agv.WriteProperties(new DeviceServiceInvokeRequest
+            {
+                ProductId = agv.ProductId,
+                DeviceId = agv.DeviceId,
+                ServiceId = Topics.Services.PROPERTIES_WRITE_SERVICE_ID,
+                Params = new Dictionary<string, object?>
+                {
+                    {propertie,value }
+
+                }
+            });
+        var aaa = $"{propertie}更新:{response.Code}_{response.Message}";
+        OutputMessage(aaa.ToString(), true);
+        Show(true);
+    }
+
+    void ReadPlc()
+    {
+        var plcValule = agv.modbusIpMaster.ReadHoldingRegisters(agv.slaveId, currentContext.PlcPoint.ToUshort(), currentContext.PlcLength.ToUshort());
+        var outMsg = agv.ReadPlc(plcValule);
+        OutputMessage(outMsg, true);
+        Show(true);
+    }
+   
+    private void WritePlc()
+    {
+        var val = currentContext.PlcValue;
+        logger.LogInformation($"WritePlc 的值为: {val.ToFloat()}");
+        var response = agv.modbusIpMaster.WriteSingleRegisterAsync(1, Convert.ToUInt16(currentContext.PlcPoint), Math.Round(val.ToFloat()).ToUshort());
+        OutputMessage($"WritePlc 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+        Show(true);
+    }
+
+    // void ReadPlc()
+    // {
+    //     var readShort = agv.modbusIpMaster.ReadHoldingRegisters(agv.slaveId, currentContext.PlcPoint.ToUshort(), 2);
+    //     logger.LogInformation($"Read Value : {JsonSerializer.Serialize(readShort)}");
+    //     var plcValule = readShort.UshortToFloat();
+    //     OutputMessage($"读取PLC :{currentContext.PlcPoint} 的值为：{plcValule} ", true);
+    //     Show(true);
+    // }
+    // private void WritePlc()
+    // {
+    //     var val = currentContext.PlcValue;
+    //     logger.LogInformation($"WritePlc 的原始值为:{val.ToFloat()}  转换后值： {JsonSerializer.Serialize(val.ToFloat().StringFloatToUshort())}");
+    //     var response = agv.modbusIpMaster.WriteMultipleRegistersAsync(1, Convert.ToUInt16(currentContext.PlcPoint), val.ToFloat().StringFloatToUshort());
+    //     OutputMessage($"WritePlc 函数执行结果: {JsonSerializer.Serialize(response)}", true);
+    //     Show(true);
+    // }
+
+    private async void MoveToPos()
+    {
+        try
+        {
+            // var position = currentContext.ToMovePos.PadLeft(5, '0');
+            var position = currentContext.ToMovePos;
+            var request = new DeviceServiceInvokeRequest();
+            request.Params["MoveTargetPos"] = position;
+            request.Params["CheckMovePoint"] = agv.DeviceDescriptor.Extra["CheckMovePoint"];
+            request.Params["Unlock"] = true;
+            request.Params["count"] = "0";
+
+            if (agv.configExtra["AgvChassisSupplier"].ToStr() == "HikRobot")
+            {
+                string taskCode = "VegaHik" + DateTime.Now.ToString("yyyyMMddHHmmss");
+                request.Params["taskCode"] = taskCode;
+                request.Params["reqCode"] = taskCode + "_1";
+                agv.publicMoveId = taskCode;
+            }
+
+            var newmoveresult = await agv.Move(request);
+            var errormsg = string.Format($"Move：AGV移动到点{position}_{newmoveresult.Code}_{newmoveresult.Message}");
+            if (newmoveresult.Code != ErrorCodes.Sys.SUCCESS)
+            {
+                agv.errorInfo = new Tuple<string, string, string>("AGV_Work_MoveNoSuccess", "MoveNoSuccess", errormsg);
+                OutputMessage(errormsg);
+                return;
+            }
+
+            OutputMessage($"移动结果：{newmoveresult.Code}_{newmoveresult.Message}", true);
+            Show(true);
+        }
+        catch (Exception ee)
+        {
+            OutputMessage($"移动异常：{ee.Message}", true);
+        }
+    }
+
+    //private async void ReadCode()
+    //{
+    //	var aaa = agv.ReadCode();
+    //	OutputMessage("条码：" + aaa.Item2, true);
+    //}
+
+    private async void ReadErrorCode()
+    {
+        var aaa = agv.ReadErrorCode();
+        OutputMessage("条码：" + aaa.Item2, true);
+    }
+    //AgvToReady
+    private async void AgvToReady()
+    {
+        var agvtoready = agv.AgvToReady();
+
+        OutputMessage($"agvIsReady：{agvtoready.Item1}_Msg:{agvtoready.Item2}", true);
+    }
+    //
+    private async void ResetDeviceStatus()
+    {
+        if (agv.Status == DeviceStatus.Working)
+        {
+            OutputMessage($"AGV 当前正在执行任务，请稍后再设置", true);
+            return;
+        }
+        var resetDeviceStatus = await agv.ResetDeviceStatus();
+        OutputMessage(resetDeviceStatus.Item2.ToString(), resetDeviceStatus.Item1);
+        Show(true);
+    }
+
+    private async void ToException()
+    {
+        var toException = await agv.AgvToException();
+        OutputMessage($"设置设备异常：{toException.Item1}_{toException.Item2}", true);
+        Show(true);
+    }
+
+    private async Task ReloadMaterialCodes()
+    {
+        // if (_rhModel == null)
+        // {
+        // 	_rhModel = new List<MaterialModel>();
+        // }
+        // _rhModel.Clear();
+        await agv.GetPanelItemCodeAsync((QueryOrderByEnum)currentContext.ItemOrder, currentContext.MaterialMatchCode);
+        //_rhModel.AddRange(agv.MaterialModels);
+        OutputMessage($"获取物料代码成功，当前排序方式：{((QueryOrderByEnum)currentContext.ItemOrder).ToString()}", true);
+        InvokeAsync(StateHasChanged);
+        Show(true);
+    }
+
+    //移除料仓
+    private async void RemoveSilo()
+    {
+        if (agv.Status == DeviceStatus.Working)
+        {
+            OutputMessage($"AGV 当前正在执行任务，请稍后再设置", true);
+            return;
+        }
+        //初始化没有料仓
+        agv.InitNoSilo();
+        agv.isFullSilo = false;
+        OutputMessage(JsonSerializer.Serialize(agv.PayloadPanels), true);
+        Show(true);
+    }
+    private void ToFullSilo()
+    {
+        agv.isFullSilo = true;
+        OutputMessage("ToFullSilo：true", true);
+    }
+}

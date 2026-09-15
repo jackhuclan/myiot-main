@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <BaseOutputPath>chongda</BaseOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="appsettings.Chongda.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="appsettings.Chongda.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="VgAutoDrill.Fundation" Version="3.9.3.1415" />
+    <PackageReference Include="VgAutoDrill.Fundation.CNC" Version="3.9.3.1415" />
+    <PackageReference Include="VgAutoDrill.Infrastructure" Version="3.9.3.1415" />
+  </ItemGroup>
+</Project>

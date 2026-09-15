@@ -1,0 +1,112 @@
+﻿@page "/dashboard/drilldrl"
+@inherits ProComponentBase
+@implements IDisposable
+
+<div class="mb-4">
+    <div style="float: right;width:100%;">
+        <MRow>
+            <MCol Md=4 Sm=12>
+                <MCard Elevation=0 Class="line px-6 py-3 block-between">
+                    <h6>
+                        <MIcon Size=20 Color="green darken-2"> mdi-domain</MIcon>@WorkingCount 加工台数
+                    </h6>
+                    <h6>
+                        <MIcon Size=20 Color="red">mdi-alarm-light</MIcon>@AlarmCount 报警台数
+                    </h6>
+                </MCard>
+            </MCol>
+            <MCol Md=4 Sm=12>
+                <MCard Elevation=0 Class="line px-6 py-3 block-between">
+                    <h6><MIcon Size=20 Color="red">mdi-alert-box</MIcon>@StopCount 停止台数</h6>
+                    <h6><MIcon Size=20 Color="red">mdi-octagon-outline</MIcon>@WaitingCount 等待台数</h6>
+                </MCard>
+
+            </MCol>
+            <MCol Md=4 Sm=12>
+                <MCard Elevation=0 Class="line px-6 py-3 block-between">
+                    <h6><MIcon Size=20 Color="red">mdi-progress-alert</MIcon>@IdleCount 闲置台数</h6>
+                    <h6><MIcon Size=20 Color="red">mdi-cloud-off-outline</MIcon>@OfflineCount 离线台数</h6>
+                </MCard>
+            </MCol>
+        </MRow>
+        <MRow>
+            <MCol Sm=12 Md=2>
+                <button class="select-device-button" @onclick="ShowDeviceList">
+                    <i class="fas fa-wrench"></i> 状态选择
+                </button>
+            </MCol>
+        </MRow>
+
+        @if (showModal)
+        {
+            <div class="modal">
+                <div class="modal-content">
+                    <span class="close" @onclick="CloseModal">&times;</span>
+                    <div class="device-list">
+                        @foreach (var workmode in allWorkModes)
+                        {
+                            <div class="device-item">
+                                <input type="checkbox" class="checkbox-large" @bind="@selectedWorkModes[workmode]" /> @workmode
+                            </div>
+                        }
+                    </div>
+                    <div class="button-container">
+                        <button class="confirm-button" @onclick="ConfirmSelection">确定</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <MRow>
+            @foreach (var item in GetPageDatas())
+            {
+                <MCol Md=3 Sm=12>
+                    <div class="commodity">
+                        <MCard Class="rounded-4 content">
+                            @switch (item.sWorkMode)
+                            {
+                                case "IDLE":
+                                    <MImage Height=140 Contain Src="img/vega-drill/IDLE.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                case "WAIT":
+                                    <MImage Height=140 Contain Src="img/vega-drill/WAIT.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                case "WORK":
+                                    <MImage Height=140 Contain Src="img/vega-drill/WORK.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                case "STOP":
+                                    <MImage Height=140 Contain Src="img/vega-drill/STOP.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                case "ALAM":
+                                    <MImage Height=140 Contain Src="img/vega-drill/ALAM.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                case "SERV":
+                                    <MImage Height=140 Contain Src="img/vega-drill/SERV.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                                default:
+                                    <MImage Height=140 Contain Src="img/vega-drill/OFFLINE.jpg" Class="hover-pointer" @onclick="() => NavigateToDetails(item.sEquipmentID)"></MImage>
+                                    break;
+                            }
+                            <MCardText Class="pa-3">
+                                <div class="block-between">
+                                    <MRating Value="5" Size=20 Dense Readonly Length=5 Color="remind" BackgroundColor="remind"></MRating>
+                                    <h6>稼动率：@item.sDuty%</h6>
+                                </div>
+                                <div class="text-subtitle text-truncate my-1">设备状态：@item.sWorkMode</div>
+                                <div class="text-subtitle text-truncate my-1">设备编号：@item.sEquipmentID</div>
+                                <div class="text-subtitle text-truncate my-1">钻孔进度：@item.sPersent</div>
+                                <div class="text-subtitle text-truncate my-1">已钻孔数：@item.sDrilled</div>
+                                <div class="text-subtitle text-truncate my-1">总共孔数：@item.sNeeded</div>
+                                <div class="text-truncate text-body3 neutral-lighten-3--text">程序文件：@item.sActProgram</div>
+                            </MCardText>
+                        </MCard>
+                    </div>
+                </MCol>
+            }
+        </MRow>
+        @if (PageCount > 0)
+        {
+            <MPagination @bind-Value="PageIndex" Color="primary" Circle Length=@PageCount Class="mt-4 elevation-0"></MPagination>
+        }
+    </div>
+</div>

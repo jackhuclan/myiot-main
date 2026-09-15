@@ -1,0 +1,29 @@
+{
+    "MqttServerOptions": {
+        "Host": "myHost22"
+    },
+    "DeviceListOptions": {
+        "Devices": [
+            {
+                "ProductId": "myProductId22",
+                "DeviceId": "myDeviceId",
+                "InputCapabilities": [
+                    "EmptySiloBox",
+                    "myInputCapabilities",
+                    "Finished_PRE_BUFFER"
+                ],
+                "Extra": {
+                    "ReadCodeLength": 1381,
+                    "AgvToken": "F:\\W\\L\\"
+                }
+            }
+        ]
+    },
+    "Logging": {
+        "Console": {
+            "LogLevel": {
+                "VgAutoDrill.Fundation.Iot.Jobs.KeepingDeviceConnectionJob": "myKeepingDeviceConnectionJob"
+            }
+        }
+    }
+}

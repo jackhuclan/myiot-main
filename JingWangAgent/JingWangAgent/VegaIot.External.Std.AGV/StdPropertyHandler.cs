@@ -1,0 +1,11 @@
+﻿using Microsoft.Extensions.Logging;
+using VgDeviceGateway.Devices.Shelf;
+
+namespace VegaIot.External.Std.Shelf;
+
+public class StdPropertyHandler : SiloShelfPropertyHandler
+{
+    public StdPropertyHandler(ILogger<StdPropertyHandler> logger, IServiceProvider serviceProvider, StdShelf siloShelf) : base(logger, serviceProvider, siloShelf)
+    {
+    }
+}

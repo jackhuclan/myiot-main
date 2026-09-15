@@ -12,5 +12,12 @@
             "PluginName": "FakePluginSetup2",
             "Enabled": true
         }
-    ]
+    ],
+    "OverridableSettings": {
+        "VgAutoDrill": {
+            "EnableLogging": true,
+            "LogLevel": "Debug",
+            "MaxRetries": 2
+        }
+    }
 }

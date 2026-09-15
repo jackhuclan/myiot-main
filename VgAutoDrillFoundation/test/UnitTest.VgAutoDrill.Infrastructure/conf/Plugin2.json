@@ -1,5 +1,12 @@
 {
     "FakePluginSetup2Options": {
         "MyProperty": "this is property for plugin 2"
+    },
+    "OverridableSettings": {
+        "VgAutoDrill": {
+            "EnableLogging": false,
+            "LogLevel": "Information",
+            "MaxRetries": 3
+        }
     }
 }

@@ -23,7 +23,6 @@ public class HostBuilderExtensions
                 plugin.Install(services, configBuilder);
             }
 
-            configBuilder.Build();
             hostBuilderContext.Configuration = configBuilder.Build();
         }
     };
